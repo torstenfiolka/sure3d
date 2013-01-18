@@ -134,7 +134,7 @@ private:
     ar & descriptorCount;
     for(unsigned int i=0; i<descriptorCount; ++i)
     {
-//      ar & pfDescriptor.at(i);
+      ar & pfDescriptor.at(i);
       ar & colorDescriptor.at(i);
       ar & lightnessDescriptor.at(i);
     }
