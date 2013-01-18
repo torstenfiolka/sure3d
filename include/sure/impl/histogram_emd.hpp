@@ -229,6 +229,7 @@ void sure::DescriptorHistogramWithEMDistance<histoSize>::fillRandom()
   this->normalize();
 }
 
+
 //! creates the earth mover's distance matrix for the lightness and color descriptor
 template<unsigned int histoSize>
 std::vector<std::vector<double> > sure::initEMDMatrix()
@@ -248,5 +249,4 @@ std::vector<std::vector<double> > sure::initEMDMatrix()
 
 template<unsigned int histoSize>
 const std::vector<std::vector<double> > sure::DescriptorHistogramWithEMDistance<histoSize>::DISTANCE_MATRIX = sure::initEMDMatrix<histoSize>();
-
 

@@ -32,5 +32,3 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "sure/histogram_emd.h"
-
-

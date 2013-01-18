@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -42,23 +42,26 @@
 
 namespace sure {
 
-const float OCTREE_MINIMUM_VOLUME_SIZE = 0.01f;
-const float OCTREE_INITIAL_SIZE = 81.92f;
+enum EntropyCalculationMode
+{
+  NORMALS = 0,
+  CROSSPRODUCTS_ALL_NORMALS_WITH_MAIN_NORMAL,
+  CROSSPRODUCTS_ALL_NORMALS_PAIRWISE
+};
 
-//! returns the index of the nearest sampling resolution to a given resolution
-int getSamplingMapIndex(float resolution);
+enum CrossProductWeightMethod
+{
+  NO_WEIGHT = 0,
+  INVERSE_ABSOLUTE_DOT_PRODUCT,
+  INVERSE_POSITIVE_DOT_PRODUCT,
+  EXCLUSION
+};
 
 //! stores configuration data
 class Configuration
 {
 public:
 
-  enum EntropyCalculationMode
-  {
-    NORMALS = 0,
-    CROSSPRODUCTS_ALL_NORMALS_WITH_MAIN_NORMAL,
-    CROSSPRODUCTS_ALL_NORMALS_PAIRWISE
-  };
 
   Configuration()
   {
@@ -67,29 +70,50 @@ public:
 
   void reset();
 
-  float getSamplingRate() const { return samplingRate; }
-  float getSize() const { return histogramSize; }
-  float getNormalSamplingRate() const { return normalSamplingRate; }
-  float getNormalScale() const { return normalScale; }
-
-  void setSamplingRate(float rate) { this->samplingRate = rate; this->samplingLevel = sure::getSamplingMapIndex(rate); }
+  void setSamplingRate(float rate) { this->samplingRate = rate; this->samplingLevel = this->getSamplingMapIndex(rate); }
   void setSize(float size) { this->histogramSize = size; this->histogramRadius = size*0.5f; this->featureInfluenceRadius = size; }
   void setNormalsScale(float scale) { this->normalScale = scale; this->normalScaleRadius = scale*0.5f; }
-  void setNormalSamplingRate(float rate) { this->normalSamplingRate = rate; this->normalSamplingLevel = sure::getSamplingMapIndex(rate); }
+  void setNormalSamplingRate(float rate) { this->normalSamplingRate = rate; this->normalSamplingLevel = this->getSamplingMapIndex(rate); }
+
+  float getSamplingRate() const { return samplingRate; }
+  unsigned int getSamplingLevel() const { return samplingLevel; }
+  float getSize() const { return histogramSize; }
+  float getNormalSamplingRate() const { return normalSamplingRate; }
+  unsigned int getNormalSamplingLevel() const { return normalSamplingLevel; }
+  float getNormalScale() const { return normalScale; }
+
+  float getOctreeMinimumVolumeSize() const { return octreeMinimumVolumeSize; }
+  float getOctreeExpansion() const { return octreeExpansion; }
+  float getOctreeResolutionThreshold() const { return octreeResolutionThreshold; }
+
+  //! returns the index of the nearest sampling resolution to a given resolution
+  int getSamplingMapIndex(float resolution) const;
 
   void setEntropyCalculationMode(EntropyCalculationMode mode) { this->entropyMode = mode; }
-  void setCrossProducteWeightMethod(int method) { this->histogramWeightMethod = method; }
+  void setCrossProducteWeightMethod(CrossProductWeightMethod method) { this->cpWeightMethod = method; }
 
   void setFeatureInfluenceRadius(float radius) { this->featureInfluenceRadius = radius; }
   void setMinimumCornerness(float cornerness) { this->minimumCornerness3D = cornerness; }
   void setMinimumEntropy(float entropy) { this->minimumEntropy = entropy; }
-//  void setMinimumOctreeVolumeSize(float size) { this->minimumOctreeVolumeSize = size; }
+
+  void setOctreeMinimumVolumeSize(float size)
+  {
+    this->octreeMinimumVolumeSize = size;
+    this->setSamplingRate(this->samplingRate);
+    this->setNormalSamplingRate(this->normalSamplingRate);
+  }
+  void setOctreeExpansion(float expansion)
+  {
+    this->octreeExpansion = expansion;
+    this->setSamplingRate(this->samplingRate);
+    this->setNormalSamplingRate(this->normalSamplingRate);
+  }
+  void setOctreeResolutionThreshold(float threshold) { this->octreeResolutionThreshold = threshold; }
 
   void setAdditionalPointsOnDepthBorders(bool addPoints) { this->additionalPointsOnDepthBorders = addPoints; }
   void setIgnoreBackgroundDetections(bool ignore) { this->ignoreBackgroundDetections = ignore; }
   void setImprovedLocalization(bool localize) { this->improvedLocalization = localize; }
   void setLimitOctreeResolution(bool limit) { this->limitOctreeResolution = limit; }
-  void setMultiResolutionNormals(bool multiResolution) { this->multiResolutionNormals = multiResolution; }
 
 protected:
 
@@ -108,18 +132,20 @@ protected:
   float featureInfluenceRadius;
   float minimumEntropy;
   float minimumCornerness3D;
+  float curvatureRadius;
 
   EntropyCalculationMode entropyMode;
 
-  float minimumOctreeVolumeSize;
+  float octreeMinimumVolumeSize;
+  float octreeExpansion;
+  float octreeResolutionThreshold;
 
   bool additionalPointsOnDepthBorders;
   bool ignoreBackgroundDetections;
   bool improvedLocalization;
   bool limitOctreeResolution;
-  bool multiResolutionNormals;
 
-  int histogramWeightMethod;
+  CrossProductWeightMethod cpWeightMethod;
 
   template <typename PointT>
   friend class SURE_Estimator;

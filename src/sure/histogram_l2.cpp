@@ -263,3 +263,5 @@ void sure::DescriptorHistogramWithL2Distance::fillRandom()
   }
   this->normalize();
 }
+
+BOOST_CLASS_VERSION(sure::DescriptorHistogramWithL2Distance, 0)

@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -117,27 +117,32 @@ protected:
   // Todo: Sinnvoller Name
   unsigned int descriptorCount;
 
-  friend std::ofstream& operator<<(std::ofstream& stream, const sure::Feature& rhs);
+//  friend std::ofstream& operator<<(std::ofstream& stream, const sure::Feature& rhs);
+
+private:
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & boost::serialization::base_object<sure::ColorSurflet>(*this);
+    ar & entropy;
+    ar & radius;
+    ar & pointCloudIndex;
+    ar & cornerness3D;
+    ar & descriptorCount;
+    for(unsigned int i=0; i<descriptorCount; ++i)
+    {
+//      ar & pfDescriptor.at(i);
+      ar & colorDescriptor.at(i);
+      ar & lightnessDescriptor.at(i);
+    }
+  }
+
 };
 
-template<class FeatureClass>
-bool writeFeaturesToFile(const std::vector<FeatureClass>& features, const std::string& filename);
-
-template<class FeatureClass>
-std::vector<FeatureClass> readFeaturesFromFile(const std::string& filename);
-
-std::ofstream& operator<<(std::ofstream& stream, const sure::Feature& rhs);
-
-//double calculateDistance(const sure::Feature& feature1, const sure::Feature& feature2, sure::DescriptorType type = sure::FEATURE)
-//{
-//  return feature1.distanceTo(feature2, type);
-//}
-//
-//double calculateDistance(const sure::Feature& feature1, const sure::Feature& feature2, double shapeWeight, double colorWeight, double lightnessWeight)
-//{
-//  return feature1.distanceTo(feature2, shapeWeight, colorWeight, lightnessWeight);
-//}
-
+//std::ofstream& operator<<(std::ofstream& stream, const sure::Feature& rhs);
 
 }
 

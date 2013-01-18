@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -79,6 +79,16 @@ public:
 protected:
 
   static const std::vector<std::vector<double> > DISTANCE_MATRIX;
+
+private:
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & boost::serialization::base_object<sure::DescriptorHistogramWithEMDistance<sure::COLOR_HISTOGRAM_SIZE> >(*this);
+  }
 
 };
 

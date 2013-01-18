@@ -35,6 +35,10 @@
 
 void sure::OctreeValue::clear()
 {
+  for(int i=0; i<5; ++i)
+  {
+    test[i] = std::numeric_limits<float>::infinity();
+  }
   for(int i=0; i<3; ++i)
   {
     summedSquares[i] = summedPos[i] = 0.f;
@@ -46,27 +50,30 @@ void sure::OctreeValue::clear()
   }
   numberOfPoints = 0;
   colorR = colorG = colorB = 0.f;
-  entropy = cornerness3D =  0.f;
+  entropy = cornerness3D = 0.f;
 
+  density = std::numeric_limits<float>::infinity();
+  scale = std::numeric_limits<float>::infinity();
   pointCloudIndex = -1;
 
   statusOfNormal = sure::OctreeValue::NORMAL_NOT_CALCULATED;
-
-  normalHistogram = NULL;
-
   statusOfMaximum = sure::OctreeValue::MAXIMUM_NOT_CALCULATED;
+
+  normalHistogram = sure::NormalHistogram();
 }
 
 const sure::OctreeValue& sure::OctreeValue::operator=(const sure::OctreeValue& rhs)
 {
   if( this != &rhs )
   {
+    this->normalHistogram = sure::NormalHistogram(rhs.normalHistogram);
     this->colorR = rhs.colorR;
     this->colorG = rhs.colorG;
     this->colorB = rhs.colorB;
     this->cornerness3D = rhs.cornerness3D;
     this->entropy = rhs.entropy;
-    this->normalHistogram = rhs.normalHistogram;
+    this->density = rhs.density;
+    this->scale = rhs.scale;
     this->numberOfPoints = rhs.numberOfPoints;
     this->pointCloudIndex = rhs.pointCloudIndex;
     this->statusOfMaximum = rhs.statusOfMaximum;
@@ -81,15 +88,26 @@ const sure::OctreeValue& sure::OctreeValue::operator=(const sure::OctreeValue& r
     {
       this->summedSquares[i] = rhs.summedSquares[i];
     }
-    this->entropyHistogram = this->normalHistogram = NULL;
 
+    for(int i=0; i<5; ++i)
+    {
+      this->test[i] = rhs.test[i];
+    }
   }
   return *this;
 }
 
 sure::OctreeValue sure::OctreeValue::operator+(const sure::OctreeValue& rhs) const
 {
-  sure::OctreeValue r = *this;
+  sure::OctreeValue r(*this);
+  for(int i=0; i<5; ++i)
+  {
+    r.test[i] = rhs.test[i];
+  }
+  if( rhs.statusOfMaximum == sure::OctreeValue::BACKGROUND )
+  {
+    r.statusOfMaximum = rhs.statusOfMaximum;
+  }
   for(int i=0; i<3; ++i)
   {
     r.summedPos[i] += rhs.summedPos[i];
@@ -108,6 +126,14 @@ sure::OctreeValue sure::OctreeValue::operator+(const sure::OctreeValue& rhs) con
 
 sure::OctreeValue& sure::OctreeValue::operator+=(const sure::OctreeValue& rhs)
 {
+  for(int i=0; i<5; ++i)
+  {
+    this->test[i] = rhs.test[i];
+  }
+  if( rhs.statusOfMaximum == sure::OctreeValue::BACKGROUND )
+  {
+    this->statusOfMaximum = rhs.statusOfMaximum;
+  }
   for(int i=0; i<3; ++i)
   {
     summedPos[i] += rhs.summedPos[i];
@@ -161,10 +187,7 @@ void sure::OctreeValue::print() const
       std::cout << "Artificial Node." << std::endl;
       break;
   }
-  if( normalHistogram )
-  {
-    normalHistogram->print();
-  }
+normalHistogram.print();
 }
 
 float sure::OctreeValue::r() const
@@ -186,4 +209,9 @@ float sure::OctreeValue::b() const
   if( numberOfPoints > 0)
     return colorB / float(numberOfPoints);
   return 0.f;
+}
+
+void sure::OctreeValue::calculateHistogram()
+{
+  normalHistogram.calculateHistogram(normal);
 }

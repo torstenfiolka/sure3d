@@ -125,4 +125,5 @@ double sure::HueDescriptor::distanceTo(const sure::HueDescriptor& rhs) const
 
 const std::vector<std::vector<double> > sure::HueDescriptor::DISTANCE_MATRIX = sure::initHueEMDMatrix();
 
-
+BOOST_CLASS_VERSION(sure::DescriptorHistogramWithEMDistance<sure::COLOR_HISTOGRAM_SIZE>, 0)
+BOOST_CLASS_VERSION(sure::HueDescriptor, 0)

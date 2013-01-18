@@ -184,6 +184,8 @@ main ()
     // Adjust the minimum Cornerness to reduce number of features on edges
     config.setMinimumCornerness(0.25f);
 
+//    config.setEntropyCalculationMode(sure::CROSSPRODUCTS_ALL_NORMALS_PAIRWISE);
+
     // set altered configuration
     sure.setConfig(config);
 

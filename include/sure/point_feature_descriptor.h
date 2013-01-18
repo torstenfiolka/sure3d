@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -80,6 +80,18 @@ protected:
   sure::DescriptorHistogramWithL2Distance alphaHistogram; // Cosine from polar angle of normals
   sure::DescriptorHistogramWithL2Distance phiHistogram; // direction between surflet points
   sure::DescriptorHistogramWithL2Distance thetaHistogram; // Azimuth Angle between normals
+
+private:
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & alphaHistogram;
+    ar & phiHistogram;
+    ar & thetaHistogram;
+  }
 
 };
 

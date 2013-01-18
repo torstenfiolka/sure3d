@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -39,6 +39,8 @@
 #include <Eigen/Dense>
 #include <pcl/point_types.h>
 
+#include <sure/configuration.h>
+
 // TODO: rethink allocator
 // TODO: replace std::map
 
@@ -47,14 +49,6 @@ namespace sure {
 //! stores the histogram for a normal
 class NormalHistogram {
 public:
-
-  enum WeightMethod
-  {
-    NO_WEIGHT = 0,
-    INVERSE_ABSOLUTE_DOT_PRODUCT,
-    INVERSE_POSITIVE_DOT_PRODUCT,
-    EXCLUSION
-  };
 
   //! constants for the class
   // 4:22 5:34 6:49 7:66 10:134
@@ -65,12 +59,17 @@ public:
   static const float MAX_DISTANCE;
   static const float EPSILON = 1e-4;
 
-  NormalHistogram(int value = 0);
-  NormalHistogram(const sure::NormalHistogram& obj)
+  NormalHistogram(int value = 0) : entropy(0.f), numberOfNormals(0), weight(0.f), zeroClass(0.f)
   {
+    clear();
+  }
+
+  NormalHistogram(const sure::NormalHistogram& obj) : entropy(0.f), numberOfNormals(0), weight(0.f), zeroClass(0.f)
+  {
+    clear();
     this->operator=(obj);
   }
-  ~NormalHistogram();
+  ~NormalHistogram() {}
 
   //! sets the + operator for adding histograms
   sure::NormalHistogram& operator=(const sure::NormalHistogram& rhs);
@@ -84,10 +83,10 @@ public:
   void clear();
 
   //! calculates the histogramm for a given normal
-  void calculateHistogram(const Eigen::Vector3f& normal, int points = 1);
-  void calculateHistogram(const float normal[3], int points = 1);
+  void calculateHistogram(const Eigen::Vector3f& normal);
+  void calculateHistogram(const float normal[3]);
 
-  void insertCrossProduct(const Eigen::Vector3f& referenceNormal, const Eigen::Vector3f& secondNormal, WeightMethod weightMethod = sure::NormalHistogram::NO_WEIGHT);
+  void insertCrossProduct(const Eigen::Vector3f& referenceNormal, const Eigen::Vector3f& secondNormal, sure::CrossProductWeightMethod weightMethod = sure::NO_WEIGHT);
 
   //! calculates the entropy of the histogram
   void calculateEntropy();
@@ -103,7 +102,7 @@ public:
 
   float entropy;
 
-  unsigned int numberOfPoints;
+  unsigned int numberOfNormals;
   float weight;
   float zeroClass;
 

@@ -177,13 +177,12 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::setDimensionsF
 			break;
 
 		case 7: // > > >
-			minPosition[0] = (parent->minPosition[0] + parent->maxPosition[0]) * 0.5f;
-			maxPosition[0] = parent->maxPosition[0];
-			minPosition[1] = (parent->minPosition[1] + parent->maxPosition[1]) * 0.5f;
-			maxPosition[1] = parent->maxPosition[1];
-			minPosition[2] = (parent->minPosition[2] + parent->maxPosition[2]) * 0.5f;
-			maxPosition[2] = parent->maxPosition[2];
+			minPosition = (parent->minPosition + parent->maxPosition) * 0.5f;
+			maxPosition = parent->maxPosition;
 			break;
+		default:
+		  std::cerr << "Error: Got an Octant number " << octant << "\n";
+		  break;
 	};
 
 }
@@ -268,22 +267,23 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::sweepUp( void*
 
 
 template< typename CoordType, typename ValueType >
-inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getPointsInVolume( std::vector< spatialaggregate::OcTreeNode< CoordType, ValueType >* >& points, const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
+inline unsigned int spatialaggregate::OcTreeNode< CoordType, ValueType >::getPointsInVolume( const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
 
 	if( type == OCTREE_LEAF_NODE ) {
 
 		// check if point in leaf is within region
 		if( inRegion( minPosition, maxPosition ) ) {
-			points.push_back( this );
+			return this->numPoints;
 		}
 
 	}
 	else {
 
 		if( (this->maxPosition[0] - this->minPosition[0]) - minimumSearchVolumeSize <= -OCTREE_EPSILON*minimumSearchVolumeSize ) {
-			return;
+			return 0;
 		}
 
+		unsigned int ret(0);
 		// for all siblings
 		// - if regions overlap: call add points
 		for( unsigned int i = 0; i < 8; i++ ) {
@@ -291,11 +291,12 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getPointsInVol
 				continue;
 
 			if( siblings[i]->overlap( minPosition, maxPosition ) )
-				siblings[i]->getPointsInVolume( points, minPosition, maxPosition, minimumSearchVolumeSize );
+				ret += siblings[i]->getPointsInVolume( minPosition, maxPosition, minimumSearchVolumeSize );
 		}
+		return ret;
 
 	}
-
+	return 0;
 }
 
 
@@ -560,6 +561,39 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 
 }
 
+template< typename CoordType, typename ValueType >
+inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::getNodeOnLevel(const spatialaggregate::OcTreePosition< CoordType >& position, unsigned int level) {
+
+  if( type == OCTREE_LEAF_NODE ) {
+
+    if( this->depth == level && inRegion( position)  ) {
+      return this;
+    }
+    else
+    {
+      return NULL;
+    }
+  }
+  else {
+
+    if( this->depth == level ) {
+      if( inRegion( position ) ) {
+        return this;
+      }
+    }
+    else if( level > this->depth )
+    {
+      int oct(getOctant(position));
+      if( siblings[oct] )
+      {
+        return siblings[oct]->getNodeOnLevel( position, level);
+      }
+    }
+  }
+  return NULL;
+}
+
+
 
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::sweepDown( void* data, void (*f)( spatialaggregate::OcTreeNode< CoordType, ValueType >* current, spatialaggregate::OcTreeNode< CoordType, ValueType >* next, void* data ) ) {
@@ -600,7 +634,7 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 
 	// traverse from root until we found an empty leaf node
 	spatialaggregate::OcTreeNode< CoordType, ValueType >* parentNode = parent;
-	unsigned int octant = 0;
+	unsigned int octant(-1);
 	spatialaggregate::OcTreeNode< CoordType, ValueType >* currNode = this;
 
 	while( currNode ) {
@@ -610,7 +644,7 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		}
 
 		parentNode = currNode;
-		octant = currNode->getOctant( leaf->position );
+		octant = currNode->getOctant( leaf->closestPosition );
 		currNode = currNode->siblings[ octant ];
 
 		// add value to integral value of parent node
@@ -620,15 +654,15 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		parentNode->numPoints += leaf->numPoints;
 
 		// check if position is more central to the parentNode's position
-		CoordType dx = parentNode->position[0] - leaf->position[0];
-		CoordType dy = parentNode->position[1] - leaf->position[1];
-		CoordType dz = parentNode->position[2] - leaf->position[2];
+		CoordType dx = parentNode->position[0] - leaf->closestPosition[0];
+		CoordType dy = parentNode->position[1] - leaf->closestPosition[1];
+		CoordType dz = parentNode->position[2] - leaf->closestPosition[2];
 		CoordType dist2 = dx*dx+dy*dy+dz*dz;
 
 		if( dist2 < parentNode->closestPositionDistance ) {
-			parentNode->closestPosition[0] = leaf->position[0];
-			parentNode->closestPosition[1] = leaf->position[1];
-			parentNode->closestPosition[2] = leaf->position[2];
+			parentNode->closestPosition[0] = leaf->closestPosition[0];
+			parentNode->closestPosition[1] = leaf->closestPosition[1];
+			parentNode->closestPosition[2] = leaf->closestPosition[2];
 			parentNode->closestPositionDistance = dist2;
 		}
 
@@ -641,6 +675,12 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		leaf->parent = parentNode;
 		leaf->setDimensionsForParentOctant( octant ); // to set min max positions
 		leaf->depth = parentNode->depth + 1;
+
+		leaf->position = (leaf->minPosition + leaf->maxPosition) * 0.5f;
+		CoordType dx = leaf->position[0] - leaf->closestPosition[0];
+    CoordType dy = leaf->position[1] - leaf->closestPosition[1];
+    CoordType dz = leaf->position[2] - leaf->closestPosition[2];
+    leaf->closestPositionDistance = dx*dx+dy*dy+dz*dz;
 
 		parentNode->siblings[octant] = leaf;
 
@@ -657,22 +697,37 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		if( (oldLeaf->maxPosition[0] - oldLeaf->minPosition[0]) - minimumVolumeSize * 2.f <= -OCTREE_EPSILON * minimumVolumeSize ) {
 
 			// discard point
-			// TODO: average point position?
+
 			oldLeaf->value += leaf->value;
 			oldLeaf->numPoints += leaf->numPoints;
+
+	    CoordType dx = oldLeaf->position[0] - leaf->closestPosition[0];
+	    CoordType dy = oldLeaf->position[1] - leaf->closestPosition[1];
+	    CoordType dz = oldLeaf->position[2] - leaf->closestPosition[2];
+	    CoordType dist2 = dx*dx+dy*dy+dz*dz;
+
+	    if( dist2 < oldLeaf->closestPositionDistance ) {
+	      oldLeaf->closestPosition[0] = leaf->closestPosition[0];
+	      oldLeaf->closestPosition[1] = leaf->closestPosition[1];
+	      oldLeaf->closestPosition[2] = leaf->closestPosition[2];
+	      oldLeaf->closestPositionDistance = dist2;
+	    }
+
 			allocator->deallocate( leaf );
+
 			return oldLeaf;
 
 		}
 
 
 		// just skip double points
-		if( oldLeaf->position == leaf->position ) {
-			oldLeaf->value += leaf->value;
-			oldLeaf->numPoints += leaf->numPoints;
-			allocator->deallocate( leaf );
-			return oldLeaf;
-		}
+//		if( oldLeaf->position == leaf->position ) {
+//		  std::cerr << "!Double point!\n";
+//			oldLeaf->value += leaf->value;
+//			oldLeaf->numPoints += leaf->numPoints;
+//			allocator->deallocate( leaf );
+//			return oldLeaf;
+//		}
 
 		spatialaggregate::OcTreeNode< CoordType, ValueType >* branch = allocator->allocateBranchingNode();//new spatialaggregate::OcTreeBranchingNode< CoordType, ValueType >();
 		branch->parent = parentNode;
@@ -681,17 +736,12 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		branch->depth = parentNode->depth + 1;
 
 		// initialize closest position
-		CoordType dx = branch->position[0] - oldLeaf->position[0];
-		CoordType dy = branch->position[1] - oldLeaf->position[1];
-		CoordType dz = branch->position[2] - oldLeaf->position[2];
-
-		branch->closestPosition[0] = oldLeaf->position[0];
-		branch->closestPosition[1] = oldLeaf->position[1];
-		branch->closestPosition[2] = oldLeaf->position[2];
-		branch->closestPositionDistance = dx*dx+dy*dy+dz*dz;
+    branch->closestPosition[0] = oldLeaf->closestPosition[0];
+    branch->closestPosition[1] = oldLeaf->closestPosition[1];
+    branch->closestPosition[2] = oldLeaf->closestPosition[2];
+    branch->closestPositionDistance = oldLeaf->closestPositionDistance;
 
 		parentNode->siblings[octant] = branch;
-
 
 		branch->addPoint( oldLeaf, minimumVolumeSize );
 
@@ -797,13 +847,9 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 
 
 template< typename CoordType, typename ValueType >
-inline std::vector< spatialaggregate::OcTreeNode< CoordType, ValueType >* > spatialaggregate::OcTree< CoordType, ValueType >::getPointsInVolume( const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
+inline unsigned int spatialaggregate::OcTree< CoordType, ValueType >::getPointsInVolume( const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
 
-	std::vector< spatialaggregate::OcTreeNode< CoordType, ValueType >* > points;
-
-	root->getPointsInVolume( points, minPosition, maxPosition, minimumSearchVolumeSize );
-
-	return points;
+	return root->getPointsInVolume( minPosition, maxPosition, minimumSearchVolumeSize );
 
 }
 
@@ -844,4 +890,8 @@ inline void spatialaggregate::OcTree< CoordType, ValueType >::applyOperatorInVol
 
 }
 
+template< typename CoordType, typename ValueType >
+inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTree< CoordType, ValueType >::getNodeOnLevel(const spatialaggregate::OcTreePosition< CoordType >& position, unsigned int level) {
+  return root->getNodeOnLevel(position, level);
+}
 

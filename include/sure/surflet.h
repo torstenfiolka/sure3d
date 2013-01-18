@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -37,8 +37,13 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/Eigen>
+
 #include <iostream>
 #include <iomanip>
+
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/version.hpp>
+#include <boost/serialization/base_object.hpp>
 
 namespace sure
 {
@@ -83,12 +88,29 @@ public:
 
   virtual ~Surflet()  {  }
 
-  friend std::ostream& operator<<(std::ostream& stream, const sure::Surflet& rhs);
+//  friend std::ostream& operator<<(std::ostream& stream, const sure::Surflet& rhs);
+
+private:
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & normal[0];
+    ar & normal[1];
+    ar & normal[2];
+    ar & point[0];
+    ar & point[1];
+    ar & point[2];
+  }
+
 };
+
 
 void calculateSurfletPairRelations(const sure::Surflet& p1, const sure::Surflet& p2, double& alpha, double& phi, double& theta);
 
-std::ostream& operator<<(std::ostream& stream, const sure::Surflet& rhs);
+//std::ostream& operator<<(std::ostream& stream, const sure::Surflet& rhs);
 
 }
 

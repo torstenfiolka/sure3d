@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -40,6 +40,10 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/version.hpp>
+#include <boost/serialization/base_object.hpp>
 
 namespace sure
 {
@@ -137,12 +141,7 @@ public:
   const std::string& getName() const { return name; }
   unsigned int getSize() const { return histogramSize; }
 
-  virtual void print() const
-  {
-    std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Histogram Size: " << histogramSize << " Bin Size: " << binSize << std::endl;
-    std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Min: " << minimum << " Max: " << maximum << " Range: " << range << std::endl;
-    std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Histogram Weight: " << histogramWeight << " Number of Points: " << numberOfPoints << " Normalized: " << isNormalized() << std::endl;
-  }
+  virtual void print() const;
 
   double distanceTo(const sure::HistogramBase& rhs) { return INFINITY; }
 
@@ -153,8 +152,26 @@ protected:
   double minimum, maximum, range, binSize, histogramWeight;
   unsigned int histogramSize, numberOfPoints;
 
-};
+private:
 
+  HistogramBase() : name(""), minimum(0.0), maximum(0.0), range(0.0), binSize(0.0), histogramWeight(0.0), histogramSize(0), numberOfPoints(0) {}
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & name;
+    ar & minimum;
+    ar & maximum;
+    ar & range;
+    ar & binSize;
+    ar & histogramWeight;
+    ar & histogramSize;
+    ar & numberOfPoints;
+  }
+
+};
 
 } // namespace
 

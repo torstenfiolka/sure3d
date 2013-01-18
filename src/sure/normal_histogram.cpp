@@ -37,23 +37,17 @@ const float sure::NormalHistogram::LOG_BASE_2 = log(2.f);
 const float sure::NormalHistogram::MAX_ENTROPY = log(sure::NormalHistogram::HISTOGRAM_SIZE) / log(2.f);
 const float sure::NormalHistogram::MAX_DISTANCE = cos(M_PI / 3.f);
 
-sure::NormalHistogram::NormalHistogram(int value)
-{
-  clear();
-}
-
-sure::NormalHistogram::~NormalHistogram()
-{
-}
-
 sure::NormalHistogram& sure::NormalHistogram::operator=(const sure::NormalHistogram& rhs)
 {
   if( this != &rhs )
   {
-    *this = rhs;
+    this->entropy = rhs.entropy;
+    this->numberOfNormals = rhs.numberOfNormals;
+    this->weight = rhs.weight;
+    this->zeroClass = rhs.zeroClass;
     for(int i=0; i<HISTOGRAM_SIZE; ++i)
     {
-      this->values[i] += rhs.values[i];
+      this->values[i] = rhs.values[i];
     }
   }
   return *this;
@@ -62,7 +56,7 @@ sure::NormalHistogram& sure::NormalHistogram::operator=(const sure::NormalHistog
 sure::NormalHistogram sure::NormalHistogram::operator+(const sure::NormalHistogram& rhs) const
 {
   sure::NormalHistogram h = *this;
-  h.numberOfPoints += rhs.numberOfPoints;
+  h.numberOfNormals += rhs.numberOfNormals;
   h.weight += rhs.weight;
   for(int i=0; i<HISTOGRAM_SIZE; ++i)
   {
@@ -74,7 +68,7 @@ sure::NormalHistogram sure::NormalHistogram::operator+(const sure::NormalHistogr
 sure::NormalHistogram& sure::NormalHistogram::operator+=(const sure::NormalHistogram& rhs)
 {
   this->weight += rhs.weight;
-  this->numberOfPoints += rhs.numberOfPoints;
+  this->numberOfNormals += rhs.numberOfNormals;
   for(int i=0; i<HISTOGRAM_SIZE; ++i)
   {
     this->values[i] += rhs.values[i];
@@ -95,7 +89,7 @@ sure::NormalHistogram sure::NormalHistogram::operator*(const float& rhs) const
 
 void sure::NormalHistogram::clear()
 {
-  numberOfPoints = 0;
+  numberOfNormals = 0;
   entropy = 0.f;
   weight = 0.f;
   for(int i=0; i<HISTOGRAM_SIZE; ++i)
@@ -105,10 +99,10 @@ void sure::NormalHistogram::clear()
   zeroClass = 0.f;
 }
 
-void sure::NormalHistogram::calculateHistogram(const Eigen::Vector3f& normal, int points)
+void sure::NormalHistogram::calculateHistogram(const Eigen::Vector3f& normal)
 {
   this->clear();
-  numberOfPoints = points;
+  numberOfNormals = 1;
   float distance = 0.f, totalSum = 0.f, weightedValue;
   for(int i=0; i<this->HISTOGRAM_SIZE; ++i)
   {
@@ -143,7 +137,7 @@ void sure::NormalHistogram::calculateHistogram(const Eigen::Vector3f& normal, in
   }
 }
 
-void sure::NormalHistogram::insertCrossProduct(const Eigen::Vector3f& referenceNormal, const Eigen::Vector3f& secondNormal, sure::NormalHistogram::WeightMethod weightMethod)
+void sure::NormalHistogram::insertCrossProduct(const Eigen::Vector3f& referenceNormal, const Eigen::Vector3f& secondNormal, sure::CrossProductWeightMethod weightMethod)
 {
   Eigen::Vector3f cpVector = (referenceNormal.cross(secondNormal)).normalized();
 
@@ -153,18 +147,18 @@ void sure::NormalHistogram::insertCrossProduct(const Eigen::Vector3f& referenceN
 
   switch( weightMethod )
   {
-    case sure::NormalHistogram::EXCLUSION:
+    case sure::EXCLUSION:
       if( dotProduct > 0.9f )
         return;
       break;
-    case sure::NormalHistogram::INVERSE_POSITIVE_DOT_PRODUCT:
-      crossProductWeight = std::min(1.f, 1.f - dotProduct);
-      break;
-    case sure::NormalHistogram::INVERSE_ABSOLUTE_DOT_PRODUCT:
+    case sure::INVERSE_ABSOLUTE_DOT_PRODUCT:
       crossProductWeight = 1.f - fabs(dotProduct);
       break;
+    case sure::INVERSE_POSITIVE_DOT_PRODUCT:
+      crossProductWeight = std::min(1.f, 1.f - dotProduct);
+      break;
     default:
-    case sure::NormalHistogram::NO_WEIGHT:
+    case sure::NO_WEIGHT:
       break;
   }
 
@@ -190,14 +184,14 @@ void sure::NormalHistogram::insertCrossProduct(const Eigen::Vector3f& referenceN
 
   this->weight += 1.f - crossProductWeight;
   zeroClass += 1.f - crossProductWeight;
-  numberOfPoints++;
+  numberOfNormals++;
 }
 
 
-void sure::NormalHistogram::calculateHistogram(const float normal[3], int points)
+void sure::NormalHistogram::calculateHistogram(const float normal[3])
 {
   Eigen::Vector3f vec(normal[0], normal[1], normal[2]);
-  calculateHistogram(vec, points);
+  calculateHistogram(vec);
 }
 
 void sure::NormalHistogram::calculateEntropy()
@@ -246,13 +240,12 @@ pcl::Histogram<sure::NormalHistogram::HISTOGRAM_SIZE> sure::NormalHistogram::get
 
 void sure::NormalHistogram::print() const
 {
-  std::cout << "------------------------------------" << std::endl;
   std::cout << "Histogram: ";
   for(int i=0; i<sure::NormalHistogram::HISTOGRAM_SIZE; ++i)
   {
     std::cout << values[i] << " ";
   }
   std::cout << std::endl;
-  std::cout << "Points: " << numberOfPoints << " Weight: " << weight << " Entropy: " << entropy << std::endl;
+  std::cout << "Points: " << numberOfNormals << " Weight: " << weight << " Entropy: " << entropy << std::endl;
 }
 

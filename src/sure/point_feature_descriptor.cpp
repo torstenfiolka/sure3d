@@ -132,3 +132,5 @@ void sure::PointFeatureDescriptor::fillRandom()
   phiHistogram.fillRandom();
   thetaHistogram.fillRandom();
 }
+
+BOOST_CLASS_VERSION(sure::PointFeatureDescriptor, 0)

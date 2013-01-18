@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -128,10 +128,24 @@ public:
     this->b = b;
   }
 
-  friend std::ostream& operator<<(std::ostream& stream, const sure::ColorSurflet& rhs);
+//  friend std::ostream& operator<<(std::ostream& stream, const sure::ColorSurflet& rhs);
+
+private:
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & boost::serialization::base_object<sure::Surflet>(*this);
+    ar & r;
+    ar & g;
+    ar & b;
+  }
+
 };
 
-std::ostream& operator<<(std::ostream& stream, const sure::ColorSurflet& rhs);
+//std::ostream& operator<<(std::ostream& stream, const sure::ColorSurflet& rhs);
 
 }
 

@@ -1,3 +1,12 @@
+0.2: Jan 18th, 2013
+
+- Implemented sure::Feature serialization with Boost::serialization 
+- Removed dynamically allocated Histograms in OctreeValue class
+- Changed octree parameters from static variables to configuration class variables
+- Minor changes to depth jump detection in the RangeImage class
+- Normal calculation and Entropy calculation in SURE_Estimator class refactored
+- Fixed a bug in the octree which caused false position information in nodes on lowest level
+
 0.1.2: Oct 11th, 2012
 
 - Another Fix for the range image not correctly calculating the view direction

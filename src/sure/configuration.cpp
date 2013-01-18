@@ -33,23 +33,6 @@
 
 #include <sure/configuration.h>
 
-int sure::getSamplingMapIndex(float resolution)
-{
-  float size = sure::OCTREE_INITIAL_SIZE, minDistance = INFINITY;
-  int level = 0, bestLevel = 0;
-  while( size > sure::OCTREE_MINIMUM_VOLUME_SIZE )
-  {
-    if( fabs(size-resolution) < minDistance)
-    {
-      minDistance = fabs(size-resolution);
-      bestLevel = level;
-    }
-    level++;
-    size = size * 0.5;
-  }
-  return bestLevel;
-}
-
 void sure::Configuration::reset()
 {
   samplingRate = 0.04f;
@@ -63,30 +46,52 @@ void sure::Configuration::reset()
   normalSamplingLevel = getSamplingMapIndex(normalSamplingRate);
   normalScale = samplingRate;
   normalScaleRadius = normalScale * 0.5f;
+  curvatureRadius = normalSamplingRate*1.5f;
 
   featureInfluenceRadius = histogramRadius * 2.f;
 
   minimumEntropy = 0.6f;
   minimumCornerness3D = 0.15f;
 
-  entropyMode = NORMALS;
-  histogramWeightMethod = 1;
+  entropyMode = sure::NORMALS;
+  cpWeightMethod = sure::INVERSE_ABSOLUTE_DOT_PRODUCT;
 
   additionalPointsOnDepthBorders = false;
   ignoreBackgroundDetections = false;
   improvedLocalization = true;
   limitOctreeResolution = true;
-  multiResolutionNormals = false;
 
-  minimumOctreeVolumeSize = sure::OCTREE_MINIMUM_VOLUME_SIZE;
+  octreeMinimumVolumeSize = 0.01f;
+  octreeExpansion = 40.96f;
+  octreeResolutionThreshold = 0.004;
 }
+
+int sure::Configuration::getSamplingMapIndex(float resolution) const
+{
+  float size = octreeExpansion, minDistance = INFINITY;
+  int level = 0, bestLevel = 0;
+  while( size > octreeMinimumVolumeSize )
+  {
+    if( fabs(size-resolution) < minDistance)
+    {
+      minDistance = fabs(size-resolution);
+      bestLevel = level;
+    }
+    level++;
+    size = size * 0.5;
+  }
+  return bestLevel;
+}
+
 
 std::ostream& sure::operator<<(std::ostream& stream, const sure::Configuration& config)
 {
-  stream << "# Samplingrate: " << config.samplingRate << " Corresponding octree Level: " << config.samplingLevel << " Histogram Size (scale): " << config.histogramSize << std::endl;
+  stream << "#\n" << "# Configuration\n" << "#\n";
+  stream << "# Samplingrate: " << config.samplingRate << " Corresponding octree Level: " << config.samplingLevel << " Histogram Size (scale): " << config.histogramSize << "\n";
   stream << "# Normal Samplingrate: " << config.normalSamplingRate << " Ccorresponding octree level: " << config.normalSamplingLevel << " Normal Scale: " << config.normalScale << std::endl;
   stream << "# Feature influence radius: " << config.featureInfluenceRadius << " Minimum entropy: " << config.minimumEntropy << " Minimum cornerness: " << config.minimumCornerness3D << std::endl;
-  stream << "# Improved feature localization: " << config.improvedLocalization << " Limited octree resolution: " << config.limitOctreeResolution << " Additional points on depth borders: " << config.additionalPointsOnDepthBorders << " Ignore background detections: " << config.ignoreBackgroundDetections << std::endl;
-  stream << "# entropy calculation: " << (int) config.entropyMode << " histogram weighting: " << config.histogramWeightMethod << std::endl;
+  stream << "# Improved feature localization: " << config.improvedLocalization << " Additional points on depth borders: " << config.additionalPointsOnDepthBorders << " Ignore background detections: " << config.ignoreBackgroundDetections << std::endl;
+  stream << "# entropy calculation: " << (int) config.entropyMode << " histogram weighting: " << config.cpWeightMethod << std::endl;
+  stream << "# Octree Expansion: " << config.octreeExpansion << " Minimum Volume Size: " << config.octreeMinimumVolumeSize << " (Level " << config.getSamplingMapIndex(config.octreeMinimumVolumeSize) << ") Limited resolution: " << config.limitOctreeResolution << " (" << config.octreeResolutionThreshold << ")\n#\n";
   return stream;
 }
