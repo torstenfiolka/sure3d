@@ -270,7 +270,6 @@ void sure::Feature::calculateDescriptor(const std::vector<OctreeNode* >& nodes, 
 //  ROS_INFO("Descriptorcreation: %i/%i Normals bad.", nonormals, (int) nodes.size());
 }
 
-
 void sure::Feature::createRandomDescriptor()
 {
   for(unsigned int i=0; i<descriptorCount; ++i)
@@ -281,15 +280,17 @@ void sure::Feature::createRandomDescriptor()
   }
 }
 
-std::ofstream& sure::operator<<(std::ofstream& stream, const sure::Feature& rhs)
-{
-  stream << (sure::ColorSurflet) rhs;
+//std::ofstream& sure::operator<<(std::ofstream& stream, const sure::Feature& rhs)
+//{
+//  stream << (sure::ColorSurflet) rhs;
 //  stream << std::fixed << std::setprecision(3) << "[Feature] Entropy: " << rhs.entropy << " Radius: " << rhs.radius << " Cornerness: " << rhs.cornerness3D << std::endl;
-  for(unsigned int i=0; i<rhs.descriptorCount; ++i)
-  {
-//    stream << rhs.pfDescriptor[i];
-//    stream << rhs.colorDescriptor[i];
-//    stream << rhs.lightnessDescriptor[i];
-  }
-  return stream;
-}
+//  for(unsigned int i=0; i<rhs.descriptorCount; ++i)
+//  {
+////    stream << rhs.pfDescriptor[i];
+////    stream << rhs.colorDescriptor[i];
+////    stream << rhs.lightnessDescriptor[i];
+//  }
+//  return stream;
+//}
+
+BOOST_CLASS_VERSION(sure::Feature, 0)

@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -39,20 +39,22 @@
 namespace sure
 {
 
-class RelativeLightnessDescriptor : public sure::DescriptorHistogramWithEMDistance<10>
+const int LIGHTNESS_DESCRIPTOR_SIZE = 10;
+
+class RelativeLightnessDescriptor : public sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>
 {
 public:
 
-  RelativeLightnessDescriptor() : sure::DescriptorHistogramWithEMDistance<10>(-1.0, 1.0)
+  RelativeLightnessDescriptor() : sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>(-1.0, 1.0)
   {
     referenceLightness = 0.0;
   }
-  RelativeLightnessDescriptor(const sure::DescriptorHistogramWithEMDistance<10>& obj) : sure::DescriptorHistogramWithEMDistance<10>(obj)
+  RelativeLightnessDescriptor(const sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>& obj) : sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>(obj)
   {
     referenceLightness = 0.0;
   }
 
-  sure::RelativeLightnessDescriptor& operator=(const sure::DescriptorHistogramWithEMDistance<10>& rhs);
+  sure::RelativeLightnessDescriptor& operator=(const sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>& rhs);
   sure::RelativeLightnessDescriptor operator +(const sure::RelativeLightnessDescriptor& rhs) const;
   sure::RelativeLightnessDescriptor& operator +=(const sure::RelativeLightnessDescriptor& rhs);
   sure::RelativeLightnessDescriptor operator *(const double rhs) const;
@@ -70,6 +72,17 @@ public:
 protected:
 
   double referenceLightness;
+
+private:
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & boost::serialization::base_object<sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE> >(*this);
+    ar & referenceLightness;
+  }
 
 };
 

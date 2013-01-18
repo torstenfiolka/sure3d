@@ -49,9 +49,11 @@ void sure::calculateSurfletPairRelations(const sure::Surflet& reference, const s
   theta = (double) atan2(w.dot(Eigen::Vector3d(neighbour.normal[0], neighbour.normal[1], neighbour.normal[2])), u.dot(Eigen::Vector3d(neighbour.normal[0], neighbour.normal[1], neighbour.normal[2])));
 }
 
-std::ostream& sure::operator<<(std::ostream& stream, const sure::Surflet& rhs)
-{
-  stream << std::fixed << std::setprecision(3) << "[Surflet] Position: " << rhs.point[0] << " / " << rhs.point[1] << " / " << rhs.point[2] << std::endl;
-  stream << std::fixed << std::setprecision(3) << "[Surflet] Normal: " << rhs.normal[0] << " / " << rhs.normal[1] << " / " << rhs.normal[2] << std::endl;
-  return stream;
-}
+//std::ostream& sure::operator<<(std::ostream& stream, const sure::Surflet& rhs)
+//{
+//  stream << std::fixed << std::setprecision(3) << "[Surflet] Position: " << rhs.point[0] << " / " << rhs.point[1] << " / " << rhs.point[2] << std::endl;
+//  stream << std::fixed << std::setprecision(3) << "[Surflet] Normal: " << rhs.normal[0] << " / " << rhs.normal[1] << " / " << rhs.normal[2] << std::endl;
+//  return stream;
+//}
+
+BOOST_CLASS_VERSION(sure::Surflet, 0)

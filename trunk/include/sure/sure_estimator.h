@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -46,13 +46,14 @@
 #include <sure/octreelib/algorithm/downsample.h>
 
 #include <sure/octree_value.h>
-#include <sure/normal_histogram_allocator.h>
+#include <sure/normal_histogram.h>
 #include <sure/configuration.h>
 #include <sure/color_surflet.h>
 #include <sure/range_image.h>
 #include <sure/feature.h>
 
 #include <Eigen/Dense>
+#include <Eigen/StdVector>
 
 namespace sure
 {
@@ -62,12 +63,8 @@ namespace sure
   typedef spatialaggregate::OcTreeNodeFixedCountAllocator<float, sure::OctreeValue> OctreeAllocator;
 //  typedef spatialaggregate::OcTreeNode<float, sure::OctreeValue> OctreeNode;
 
-  const float OCTREE_ACCURACY_SETOFF = 0.004f;
   const unsigned int STANDARD_OCTREE_SIZE = 500000;
   const unsigned int MINIMUM_POINTS_FOR_NORMAL = 5;
-
-  //! number of normal histograms in relation to maximum number of octree nodes
-  const float PERCENTAGE_OF_NORMAL_HISTOGRAMS = 0.2f;
 
   float calculateCornerness(const std::vector<OctreeNode*>& nodes);
   void orientateNormal(Eigen::Vector3f& normal, const Eigen::Vector3f& origin);
@@ -121,15 +118,20 @@ namespace sure
     const pcl::PointCloud<PointT>& getAddedPoints() const { return addedPoints; }
     int getOctreeDepth() { return octreeDepth; }
     std::vector<OctreeNode* >& getOctreeLevelRef(int level) { return octreeMap[level]; }
-    std::vector<OctreeNode* >& getOctreeLevelRefByResolution(float resolution) { return octreeMap[getSamplingMapIndex(resolution)]; }
+    std::vector<OctreeNode* >& getOctreeLevelRefByResolution(float resolution) { return octreeMap[config.getSamplingMapIndex(resolution)]; }
 
     OctreeNode* getNodeFromPosition(int x, int y, int level = 0) { return getNodeFromPosition(input_->points[y*input_->width+x], level); }
     OctreeNode* getNodeFromPosition(const PointT& point, int level = 0);
     OctreeNode* getNodeFromPosition(const Eigen::Vector3f& posVec, int level = 0);
     OctreeNode* getNodeFromPosition(const OctreePosition& pos, int level = 0);
 
+    const sure::RangeImage<PointT> getRangeImage() const { return rangeImage; }
+    sure::Octree* getOctree() { return octree; }
+
     const std::vector<sure::Feature>& getFeatures() const { return features; }
     pcl::PointCloud<pcl::InterestPoint>::Ptr getInterestPoints() const;
+
+    const sure::Configuration& getConfig() const { return config; }
 
     //
     //  Methodes for the Octree
@@ -145,12 +147,13 @@ namespace sure
     //
 
     void calculateNormals();
-    bool calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const OctreePosition& pos, sure::NormalHistogram* histogram = NULL);
-    bool calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const Eigen::Vector3f& pos, sure::NormalHistogram* histogram = NULL);
+    void calculateNormals(unsigned int level, float radius);
+    bool calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const Eigen::Vector3f& pos);
+    bool calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const OctreePosition& pos);
     bool calculateNormal(OctreeNode* node);
-    bool calculateNormal(OctreeNode* node, float radius, float minResolution = sure::OCTREE_MINIMUM_VOLUME_SIZE);
-    bool calculateNormal(const OctreePosition& position, float radius, float normal[3], float minResolution = sure::OCTREE_MINIMUM_VOLUME_SIZE);
-    bool calculateNormal(const Eigen::Vector3f& position, float radius, Eigen::Vector3f& normal, float minResolution = sure::OCTREE_MINIMUM_VOLUME_SIZE);
+    bool calculateNormal(OctreeNode* node, float radius);
+    bool calculateNormal(const OctreePosition& position, float radius, float normal[3]);
+    bool calculateNormal(const Eigen::Vector3f& position, float radius, Eigen::Vector3f& normal);
 
     //
     //  Feature calculation
@@ -158,9 +161,9 @@ namespace sure
 
     void calculateFeatures();
     void calculateEntropy();
-    void calculateNormalEntropy(OctreeNode* treenode);
-    void calculateCrossProductEntropy(OctreeNode* treenode);
-    void calculatePairwiseCrossProductEntropy(OctreeNode* treenode);
+    void calculateEntropy(unsigned int level, float radius);
+    void calculateEntropy(unsigned int level, float radius, unsigned int index);
+    float calculateEntropy(OctreeNode* treenode, float radius);
     void extractFeature();
 
     void localizeFeatureWithMeanShift(int iterations = 3);
@@ -193,8 +196,6 @@ namespace sure
 
     //! the size of the octree nodes corresponding to their depths
     std::vector<float> octreeNodeSizeByDepth;
-
-    sure::HistogramAllocator histogramAllocator;
 
     //! the current configuration
     sure::Configuration config;

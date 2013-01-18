@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -62,10 +62,9 @@ public:
   };
 
   static const float DEPTH_JUMP_FACTOR = 1.05f;
-  static const int PIXEL_RANGE = 5;
 
   RangeImage() : sure::Map2d<float>(INFINITY), borderMap(sure::RangeImage<PointT>::NONE) { }
-  RangeImage(const sure::RangeImage<PointT>& rhs) : sure::Map2d<float>(rhs), borderMap(rhs.borderMap) { }
+  RangeImage(const sure::RangeImage<PointT>& rhs) : sure::Map2d<float>(rhs), pcl::PCLBase<PointT>(rhs), borderMap(rhs.borderMap) { }
   ~RangeImage() { }
 
   void reset()
@@ -78,10 +77,8 @@ public:
   float getDensity(int x, int y, int radius = 1);
   float getMeanDensity(int x, int y, int radius = 1);
 
-  bool isBackgroundBorder(int index) const
-  {
-    return (borderMap.at(index) == BACKGROUND);
-  }
+  bool isBackgroundBorder(int index) const { return (borderMap.at(index) == BACKGROUND); }
+  bool isForegroundBorder(int index) const { return (borderMap.at(index) == FOREGROUND); }
 
   void addPointsOnBorders(float stepDist, float maxPointDist, pcl::PointCloud<PointT>& addedPoints);
   bool ownsBorder(int x, int y, float& dist);

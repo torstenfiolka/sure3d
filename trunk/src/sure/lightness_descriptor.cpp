@@ -33,11 +33,11 @@
 
 #include "sure/lightness_descriptor.h"
 
-sure::RelativeLightnessDescriptor& sure::RelativeLightnessDescriptor::operator=(const sure::DescriptorHistogramWithEMDistance<10>& rhs)
+sure::RelativeLightnessDescriptor& sure::RelativeLightnessDescriptor::operator=(const sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>& rhs)
 {
   if( this != &rhs )
   {
-    sure::DescriptorHistogramWithEMDistance<10>::operator =(rhs);
+    sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>::operator =(rhs);
   }
   return *this;
 }
@@ -45,14 +45,14 @@ sure::RelativeLightnessDescriptor& sure::RelativeLightnessDescriptor::operator=(
 sure::RelativeLightnessDescriptor sure::RelativeLightnessDescriptor::operator +(const sure::RelativeLightnessDescriptor& rhs) const
 {
   sure::RelativeLightnessDescriptor lhs(*this);
-  lhs = ((sure::DescriptorHistogramWithEMDistance<10>) lhs).operator +=(rhs);
+  lhs = ((sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>) lhs).operator +=(rhs);
   lhs.referenceLightness = (lhs.referenceLightness + rhs.referenceLightness) / 2.0;
   return lhs;
 }
 
 sure::RelativeLightnessDescriptor& sure::RelativeLightnessDescriptor::operator +=(const sure::RelativeLightnessDescriptor& rhs)
 {
-  *this = ((sure::DescriptorHistogramWithEMDistance<10>) *this).operator +=(rhs);
+  *this = ((sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>) *this).operator +=(rhs);
   this->referenceLightness = (this->referenceLightness + rhs.referenceLightness) / 2.0;
   return *this;
 }
@@ -60,36 +60,39 @@ sure::RelativeLightnessDescriptor& sure::RelativeLightnessDescriptor::operator +
 sure::RelativeLightnessDescriptor sure::RelativeLightnessDescriptor::operator *(const double rhs) const
 {
   sure::RelativeLightnessDescriptor lhs(*this);
-  lhs = ((sure::DescriptorHistogramWithEMDistance<10>) lhs).operator *=(rhs);
+  lhs = ((sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>) lhs).operator *=(rhs);
   return lhs;
 }
 
 sure::RelativeLightnessDescriptor& sure::RelativeLightnessDescriptor::operator *=(const double rhs)
 {
-  *this = ((sure::DescriptorHistogramWithEMDistance<10>) *this).operator *=(rhs);
+  *this = ((sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>) *this).operator *=(rhs);
   return *this;
 }
 
 sure::RelativeLightnessDescriptor sure::RelativeLightnessDescriptor::operator /(const double rhs) const
 {
   sure::RelativeLightnessDescriptor lhs(*this);
-  lhs = ((sure::DescriptorHistogramWithEMDistance<10>) lhs).operator /=(rhs);
+  lhs = ((sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>) lhs).operator /=(rhs);
   return lhs;
 }
 
 sure::RelativeLightnessDescriptor& sure::RelativeLightnessDescriptor::operator /=(const double rhs)
 {
-  *this = ((sure::DescriptorHistogramWithEMDistance<10>) *this).operator /=(rhs);
+  *this = ((sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>) *this).operator /=(rhs);
   return *this;
 }
 
 void sure::RelativeLightnessDescriptor::print() const
 {
-  sure::DescriptorHistogramWithEMDistance<10>::print();
+  sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>::print();
   std::cout << std::fixed << std::setprecision(3) << "[RelativeLightnessDescriptor] " << name << ": Reference Lightness: " << referenceLightness << std::endl;
 }
 
 void sure::RelativeLightnessDescriptor::insertValue(double lightness)
 {
-  sure::DescriptorHistogramWithEMDistance<10>::insertValue(lightness - referenceLightness);
+  sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>::insertValue(lightness - referenceLightness);
 }
+
+BOOST_CLASS_VERSION(sure::DescriptorHistogramWithEMDistance<sure::LIGHTNESS_DESCRIPTOR_SIZE>, 0)
+BOOST_CLASS_VERSION(sure::RelativeLightnessDescriptor, 0)

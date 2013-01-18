@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -39,7 +39,6 @@
 namespace sure
 {
 
-
 class DescriptorHistogramWithL2Distance : public sure::HistogramBase
 {
 public:
@@ -77,6 +76,22 @@ public:
 protected:
 
   double *histogram;
+
+private:
+
+  DescriptorHistogramWithL2Distance() : sure::HistogramBase(0, 0.0, 0.0, ""), histogram(NULL) {}
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & boost::serialization::base_object<sure::HistogramBase>(*this);
+    for(unsigned int i=0; i<histogramSize; ++i)
+    {
+      ar & histogram[i];
+    }
+  }
 
 };
 

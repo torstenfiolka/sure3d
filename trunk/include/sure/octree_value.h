@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -36,11 +36,9 @@
 
 #include <sure/normal_histogram.h>
 
-// TODO: Class has no control over its histogram
-
 namespace sure {
 
-//! stores extra data in every octree node
+  //! stores extra data in every octree node
   class OctreeValue
   {
   public:
@@ -64,24 +62,43 @@ namespace sure {
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    OctreeValue(int value = 0) : normalHistogram(NULL), entropyHistogram(NULL)
+    OctreeValue(int value = 0) : normalHistogram()
     {
       clear();
     }
 
-    OctreeValue(const OctreeValue& rhs) : pointCloudIndex(rhs.pointCloudIndex), normalHistogram(NULL), entropyHistogram(NULL),
-      numberOfPoints(rhs.numberOfPoints), colorR(rhs.colorR), colorG(rhs.colorG), colorB(rhs.colorB),
-      cornerness3D(rhs.cornerness3D), entropy(rhs.entropy), statusOfNormal(rhs.statusOfNormal), statusOfMaximum(rhs.statusOfMaximum)
+    OctreeValue(const OctreeValue& rhs) : normalHistogram()
     {
-      for(int i=0; i<3; ++i)
+      if( this != &rhs )
       {
-        normal[i] = rhs.normal[i];
-        summedPos[i] = rhs.summedPos[i];
-        summedSquares[i] = rhs.summedSquares[i];
-      }
-      for(int i=3; i<9; ++i)
-      {
-        summedSquares[i] = rhs.summedSquares[i];
+    	this->normalHistogram = sure::NormalHistogram(rhs.normalHistogram);
+        this->colorR = rhs.colorR;
+        this->colorG = rhs.colorG;
+        this->colorB = rhs.colorB;
+        this->cornerness3D = rhs.cornerness3D;
+        this->entropy = rhs.entropy;
+        this->density = rhs.density;
+        this->scale = rhs.scale;
+        this->normalHistogram = rhs.normalHistogram;
+        this->numberOfPoints = rhs.numberOfPoints;
+        this->pointCloudIndex = rhs.pointCloudIndex;
+        this->statusOfMaximum = rhs.statusOfMaximum;
+        this->statusOfNormal = rhs.statusOfNormal;
+        for(int i=0; i<3; ++i)
+        {
+          this->normal[i] = rhs.normal[i];
+          this->summedPos[i] = rhs.summedPos[i];
+          this->summedSquares[i] = rhs.summedSquares[i];
+        }
+        for(int i=3; i<9; ++i)
+        {
+          this->summedSquares[i] = rhs.summedSquares[i];
+        }
+
+        for(int i=0; i<5; ++i)
+        {
+          test[i] = rhs.test[i];
+        }
       }
     }
 
@@ -101,9 +118,11 @@ namespace sure {
     float g() const;
     float b() const;
 
-    int pointCloudIndex;
+    void calculateHistogram();
+    const sure::NormalHistogram& getHistogram() const { return normalHistogram; }
+    sure::NormalHistogram& getHistogram() { return normalHistogram; }
 
-    sure::NormalHistogram *normalHistogram, *entropyHistogram;
+    int pointCloudIndex;
 
     float summedSquares[9];
     float summedPos[3];
@@ -112,11 +131,19 @@ namespace sure {
     float cornerness3D;
 
     float entropy;
+    float density;
+    float scale;
 
     float normal[3];
+    float test[5];
+
     sure::OctreeValue::NormalStatus statusOfNormal;
 
     sure::OctreeValue::NodeStatus statusOfMaximum;
+
+  protected:
+
+    sure::NormalHistogram normalHistogram;
 
   };
 

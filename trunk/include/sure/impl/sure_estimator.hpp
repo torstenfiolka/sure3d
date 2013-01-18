@@ -81,25 +81,25 @@ float sure::calculateCornerness(const std::vector<OctreeNode*>& nodes)
 void sure::orientateNormal(Eigen::Vector3f& normal, const Eigen::Vector3f& point)
 {
   float dotProduct = normal.dot(point);
-  unsigned int index = 0;
-  while( fabs(dotProduct) < 1e-1 && index < 7 )
-  {
-    Eigen::Vector3f farPoint = Eigen::Vector3f::Zero();
-    if( index % 2 == 0 )
-    {
-      farPoint[0] = 1000.f;
-    }
-    if( (index / 2) % 2 == 0 )
-    {
-      farPoint[1] = 1000.f;
-    }
-    if( index % 4 == 0 )
-    {
-      farPoint[2] = 1000.f;
-    }
-    dotProduct = normal.dot(farPoint);
-    index++;
-  }
+//  unsigned int index = 0;
+//  while( fabs(dotProduct) < 1e-1 && index < 7 )
+//  {
+//    Eigen::Vector3f farPoint(Eigen::Vector3f::Zero());
+//    if( index % 2 == 0 )
+//    {
+//      farPoint[0] = 1000.f;
+//    }
+//    if( (index / 2) % 2 == 0 )
+//    {
+//      farPoint[1] = 1000.f;
+//    }
+//    if( index % 4 == 0 )
+//    {
+//      farPoint[2] = 1000.f;
+//    }
+//    dotProduct = normal.dot(farPoint);
+//    index++;
+//  }
   if( dotProduct < 0.f )
   {
     normal[0] = -normal[0];
@@ -107,8 +107,6 @@ void sure::orientateNormal(Eigen::Vector3f& normal, const Eigen::Vector3f& point
     normal[2] = -normal[2];
   }
 }
-
-
 
 //
 //  Methods for data and organisational purposes
@@ -147,7 +145,6 @@ void sure::SURE_Estimator<PointT>::resize(unsigned int size)
       delete octreeAllocator;
     }
     octreeAllocator = new OctreeAllocator(currentOctreeSize);
-    histogramAllocator.reset((float) currentOctreeSize * sure::PERCENTAGE_OF_NORMAL_HISTOGRAMS);
   }
 }
 
@@ -240,7 +237,6 @@ template <typename PointT>
 void sure::SURE_Estimator<PointT>::insertPointInOctree(const PointT& p, sure::OctreeValue::NodeStatus status)
 {
   sure::OctreeNode* n = NULL;
-  float volumeSize, distance;
 
   sure::OctreePoint point;
   point.value.summedPos[0] = point.position.p[0] = p.x;
@@ -261,10 +257,11 @@ void sure::SURE_Estimator<PointT>::insertPointInOctree(const PointT& p, sure::Oc
 
   if( config.limitOctreeResolution )
   {
+    float volumeSize, distance;
     distance = (input_->sensor_origin_(0) - point.position.p[0]) * (input_->sensor_origin_(0) - point.position.p[0])
              + (input_->sensor_origin_(1) - point.position.p[1]) * (input_->sensor_origin_(1) - point.position.p[1])
              + (input_->sensor_origin_(2) - point.position.p[2]) * (input_->sensor_origin_(2) - point.position.p[2]);
-    volumeSize = std::max(config.minimumOctreeVolumeSize, sure::OCTREE_ACCURACY_SETOFF * distance);
+    volumeSize = std::max(config.octreeMinimumVolumeSize, config.getOctreeResolutionThreshold() * distance);
     n = octree->root->addPoint(point, volumeSize);
   }
   else
@@ -288,8 +285,8 @@ void sure::SURE_Estimator<PointT>::buildOctree()
     octreeAllocator->reset();
   OctreePosition origin, maximum;
   origin.p[0] = origin.p[1] = origin.p[2] = 0.f;
-  maximum.p[0] = maximum.p[1] = maximum.p[2] = sure::OCTREE_INITIAL_SIZE;
-  octree = new Octree(maximum, origin, sure::OCTREE_MINIMUM_VOLUME_SIZE, octreeAllocator);
+  maximum.p[0] = maximum.p[1] = maximum.p[2] = config.getOctreeExpansion();
+  octree = new Octree(maximum, origin, config.getOctreeMinimumVolumeSize(), octreeAllocator);
 
   octreeDepth = 0;
 
@@ -300,21 +297,25 @@ void sure::SURE_Estimator<PointT>::buildOctree()
     rangeImage.calculateRangeImage();
   }
 
-//  if( config.ignoreBackgroundBorders )
-//  {
-//    for(unsigned int i=0; i<cloud.size(); ++i)
-//    {
-//      rangeImage.isBackgroundBorder(i) ? inserPointInOctree(cloud[i], sure::OctreeValue::BACKGROUND_NODE) : inserPointInOctree(cloud[i]);
-//    }
-//  }
-//  else
+  if( config.ignoreBackgroundDetections )
   {
     for(unsigned int i=0; i<indices_->size(); ++i)
     {
       const PointT& point = input_->points[indices_->at(i)];
       if( std::isfinite(point.x) && std::isfinite(point.y) && std::isfinite(point.z) )
       {
-        insertPointInOctree(input_->points[indices_->at(i)]);
+        rangeImage.isBackgroundBorder(indices_->at(i)) ? insertPointInOctree(point, sure::OctreeValue::BACKGROUND) : insertPointInOctree(point);
+      }
+    }
+  }
+  else
+  {
+    for(unsigned int i=0; i<indices_->size(); ++i)
+    {
+      const PointT& point = input_->points[indices_->at(i)];
+      if( std::isfinite(point.x) && std::isfinite(point.y) && std::isfinite(point.z) )
+      {
+        insertPointInOctree(point);
       }
     }
   }
@@ -354,7 +355,7 @@ inline void sure::SURE_Estimator<PointT>::resampleOctreeSamplingMap()
 template <typename PointT>
 void sure::SURE_Estimator<PointT>::continueDepthBorders()
 {
-  rangeImage.addPointsOnBorders(config.minimumOctreeVolumeSize, config.histogramSize, addedPoints);
+  rangeImage.addPointsOnBorders(config.octreeMinimumVolumeSize, config.histogramSize, addedPoints);
   for(unsigned int i=0; i<addedPoints.size(); ++i)
   {
     insertPointInOctree(addedPoints[i], sure::OctreeValue::ARTIFICIAL);
@@ -369,39 +370,35 @@ void sure::SURE_Estimator<PointT>::continueDepthBorders()
 template <typename PointT>
 void sure::SURE_Estimator<PointT>::calculateNormals()
 {
-  int count = 0;
-  count += octreeMap[config.normalSamplingLevel].size();
-  bool inNode = config.normalScale < octreeNodeSizeByDepth[config.normalSamplingLevel];
-
-//#pragma omp parallel for schedule(dynamic)
-  for(int i=0; i<(int) octreeMap[config.normalSamplingLevel].size(); ++i)
-  {
-    if( octreeMap[config.normalSamplingLevel][i]->value.statusOfNormal != sure::OctreeValue::NORMAL_NOT_CALCULATED )
-    {
-      continue;
-    }
-    if( !octreeMap[config.normalSamplingLevel][i]->value.normalHistogram )
-    {
-      octreeMap[config.normalSamplingLevel][i]->value.normalHistogram = histogramAllocator.allocate();
-    }
-    if( inNode )
-    {
-      calculateNormal(octreeMap[config.normalSamplingLevel][i]);
-    }
-    else
-    {
-      calculateNormal(octreeMap[config.normalSamplingLevel][i], config.normalScaleRadius, sure::OCTREE_MINIMUM_VOLUME_SIZE);
-    }
-  }
+  calculateNormals(config.normalSamplingLevel, config.normalScaleRadius);
 }
 
 template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const OctreePosition& pos, sure::NormalHistogram* histogram)
+void sure::SURE_Estimator<PointT>::calculateNormals(unsigned int level, float radius)
 {
-  Eigen::Vector3f position = Eigen::Vector3f(pos.p[0], pos.p[1], pos.p[2]);
-  return calculateNormal(value, count, normal, position, histogram);
-}
+  bool inNode = radius*2.f < octreeNodeSizeByDepth[level];
 
+//  std::cout << "Calculating normals on level " << level << " (" << octreeNodeSizeByDepth[level] << " cm) with radius " << radius << " cm." << std::endl;
+
+//#pragma omp parallel for schedule(dynamic)
+  for(std::vector<OctreeNode*>::iterator it=octreeMap[level].begin(); it!=octreeMap[level].end(); ++it)
+  {
+//    if( (*it)->value.statusOfNormal != sure::OctreeValue::NORMAL_NOT_CALCULATED )
+//    {
+//      continue;
+//    }
+    if( inNode )
+    {
+      calculateNormal((*it));
+      (*it)->value.calculateHistogram();
+    }
+    else
+    {
+      calculateNormal((*it), radius);
+      (*it)->value.calculateHistogram();
+    }
+  }
+}
 
 /**
  * Calculates a normal
@@ -413,7 +410,7 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, con
  * @return true, if the calculation is succesful
  */
 template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const Eigen::Vector3f& pos, sure::NormalHistogram* histogram)
+bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const Eigen::Vector3f& pos)
 {
   if( count >= sure::MINIMUM_POINTS_FOR_NORMAL )
   {
@@ -436,9 +433,7 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, con
     summedPosition(2) = value.summedPos[2] * (1.f / (float) count);
 
     summedSquares -= summedPosition * summedPosition.transpose();
-    summedSquares *= 1.f / (float) count;
-
-    float eigenValue;
+//    summedSquares *= 1.f / (float) count;
 
     if( !sure::is_finite(summedSquares) )
     {
@@ -446,6 +441,7 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, con
     }
 
     Eigen::Vector3f eigenVector;
+    float eigenValue;
     pcl::eigen33(summedSquares, eigenValue, eigenVector);
 
     if( std::isfinite(eigenVector[0]) && std::isfinite(eigenVector[1]) && std::isfinite(eigenVector[2]) )
@@ -453,10 +449,6 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, con
       eigenVector.normalize();
       Eigen::Vector3f orientationVec = Eigen::Vector3f(input_->sensor_origin_[0], input_->sensor_origin_[1], input_->sensor_origin_[2])-pos;
       sure::orientateNormal(eigenVector, orientationVec);
-      if( histogram )
-      {
-        histogram->calculateHistogram(eigenVector, count);
-      }
       normal[0] = eigenVector[0];
       normal[1] = eigenVector[1];
       normal[2] = eigenVector[2];
@@ -471,6 +463,13 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, con
   return false;
 }
 
+template <typename PointT>
+bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const OctreePosition& pos)
+{
+  Eigen::Vector3f position = Eigen::Vector3f(pos.p[0], pos.p[1], pos.p[2]);
+  return calculateNormal(value, count, normal, position);
+}
+
 /**
  * Calculates a normal with the values of a given octree node
  * @param node
@@ -478,7 +477,7 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, con
 template <typename PointT>
 bool sure::SURE_Estimator<PointT>::calculateNormal(OctreeNode* node)
 {
-  return calculateNormal(node->value, node->numPoints, node->value.normal, node->closestPosition, node->value.normalHistogram);
+  return calculateNormal(node->value, node->numPoints, node->value.normal, node->closestPosition);
 }
 
 /**
@@ -488,7 +487,7 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(OctreeNode* node)
  * @param minResolution
  */
 template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(OctreeNode* node, float radius, float minResolution)
+bool sure::SURE_Estimator<PointT>::calculateNormal(OctreeNode* node, float radius)
 {
   OctreePosition minPosition, maxPosition;
 
@@ -502,9 +501,9 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(OctreeNode* node, float radiu
 
   sure::OctreeValue value;
   unsigned int count = 0;
-  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, minResolution);
+  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
 
-  if( calculateNormal(value, count, node->value.normal, node->closestPosition, node->value.normalHistogram) )
+  if( calculateNormal(value, count, node->value.normal, node->closestPosition) )
   {
     node->value.statusOfNormal = value.statusOfNormal;
     return true;
@@ -522,7 +521,7 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(OctreeNode* node, float radiu
  * @return
  */
 template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(const OctreePosition& position, float radius, float normal[3], float minResolution)
+bool sure::SURE_Estimator<PointT>::calculateNormal(const OctreePosition& position, float radius, float normal[3])
 {
   OctreePosition minPosition, maxPosition;
   Eigen::Vector3f posVec = Eigen::Vector3f(position.p[0], position.p[1], position.p[2]);
@@ -538,13 +537,13 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(const OctreePosition& positio
   sure::OctreeValue value(0);
   value.statusOfMaximum = sure::OctreeValue::ARTIFICIAL;
   unsigned int count = 0;
-  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, minResolution);
+  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
 
-  return calculateNormal(value, count, normal, posVec, NULL);
+  return calculateNormal(value, count, normal, posVec);
 }
 
 template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(const Eigen::Vector3f& position, float radius, Eigen::Vector3f& normal, float minResolution)
+bool sure::SURE_Estimator<PointT>::calculateNormal(const Eigen::Vector3f& position, float radius, Eigen::Vector3f& normal)
 {
   OctreePosition minPosition, maxPosition;
 
@@ -558,10 +557,10 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(const Eigen::Vector3f& positi
 
   sure::OctreeValue value;
   value.statusOfMaximum = sure::OctreeValue::ARTIFICIAL;
-  unsigned int count = 0;
-  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, minResolution);
+  unsigned int count(0);
+  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
 
-  if( calculateNormal(value, count, value.normal, position, NULL) )
+  if( calculateNormal(value, count, value.normal, position) )
   {
     normal = Eigen::Vector3f(value.normal[0], value.normal[1], value.normal[2]);
     return true;
@@ -585,25 +584,24 @@ template <typename PointT>
 void sure::SURE_Estimator<PointT>::calculateFeatures()
 {
   initCompute();
-  std::cout << "Pointcloud: " << input_->size() << " Indices: " << indices_->size() << std::endl;
+//  std::cout << "Pointcloud: " << input_->size() << " Indices: " << indices_->size() << std::endl;
   features.clear();
-  histogramAllocator.clear();
 
-  std::cout << "Octree";
+//  std::cout << "Octree";
   buildOctree();
 
-  std::cout << "(" << octreeSize << ") Normals";
+//  std::cout << "(" << octreeSize << ") Normals";
   calculateNormals();
 
-  std::cout << " Entropy";
+//  std::cout << " Entropy";
   calculateEntropy();
 
-  std::cout << " Extraction";
+//  std::cout << " Extraction";
   extractFeature();
 
   if( config.improvedLocalization )
   {
-    std::cout << " Localization";
+//    std::cout << " Localization";
     localizeFeatureWithMeanShift(3);
   }
   std::cout << std::endl << "Calculated " << this->features.size() << " features."<< std::endl;
@@ -613,154 +611,96 @@ void sure::SURE_Estimator<PointT>::calculateFeatures()
 template <typename PointT>
 void sure::SURE_Estimator<PointT>::calculateEntropy()
 {
-  int level = config.samplingLevel;
+  calculateEntropy(config.samplingLevel, config.histogramRadius);
+}
 
-  for(unsigned int i=0; i<octreeMap[level].size(); ++i)
+template <typename PointT>
+void sure::SURE_Estimator<PointT>::calculateEntropy(unsigned int level, float radius)
+{
+  for(std::vector<OctreeNode*>::iterator it=octreeMap[level].begin(); it!=octreeMap[level].end(); ++it)
   {
-    if( octreeMap[level][i]->numPoints > 0 )
-    {
-      switch( config.entropyMode )
-      {
-        default:
-        case sure::Configuration::NORMALS:
-          calculateNormalEntropy(octreeMap[level][i]);
-          break;
-        case sure::Configuration::CROSSPRODUCTS_ALL_NORMALS_WITH_MAIN_NORMAL:
-          calculateCrossProductEntropy(octreeMap[level][i]);
-          break;
-        case sure::Configuration::CROSSPRODUCTS_ALL_NORMALS_PAIRWISE:
-          calculatePairwiseCrossProductEntropy(octreeMap[level][i]);
-          break;
-      }
-    }
+    (*it)->value.entropy = calculateEntropy((*it), radius);
+  }
+}
+
+template <typename PointT>
+void sure::SURE_Estimator<PointT>::calculateEntropy(unsigned int level, float radius, unsigned int index)
+{
+  for(std::vector<OctreeNode*>::iterator it=octreeMap[level].begin(); it!=octreeMap[level].end(); ++it)
+  {
+    (*it)->value.test[index] = calculateEntropy((*it), radius);
   }
 }
 
 //! Calculates the entropy on a single node using a histogram of normals
 template <typename PointT>
-void sure::SURE_Estimator<PointT>::calculateNormalEntropy(OctreeNode* treenode)
+float sure::SURE_Estimator<PointT>::calculateEntropy(OctreeNode* treenode, float radius)
 {
   std::vector<OctreeNode*> listOfNodes;
   OctreePosition minPosition, maxPosition;
 
-  if( treenode->value.entropyHistogram )
-  {
-    treenode->value.entropyHistogram->clear();
-  }
-  else
-  {
-    treenode->value.entropyHistogram = histogramAllocator.allocate();
-  }
+  sure::NormalHistogram entropyHistogram;
 
-  minPosition.p[0] = treenode->closestPosition.p[0] - config.histogramRadius;
-  minPosition.p[1] = treenode->closestPosition.p[1] - config.histogramRadius;
-  minPosition.p[2] = treenode->closestPosition.p[2] - config.histogramRadius;
-  maxPosition.p[0] = treenode->closestPosition.p[0] + config.histogramRadius;
-  maxPosition.p[1] = treenode->closestPosition.p[1] + config.histogramRadius;
-  maxPosition.p[2] = treenode->closestPosition.p[2] + config.histogramRadius;
+  minPosition.p[0] = treenode->closestPosition.p[0] - radius;
+  minPosition.p[1] = treenode->closestPosition.p[1] - radius;
+  minPosition.p[2] = treenode->closestPosition.p[2] - radius;
+  maxPosition.p[0] = treenode->closestPosition.p[0] + radius;
+  maxPosition.p[1] = treenode->closestPosition.p[1] + radius;
+  maxPosition.p[2] = treenode->closestPosition.p[2] + radius;
 
   octree->root->getAllNodesInVolumeOnSamplingDepth(listOfNodes, minPosition, maxPosition, config.normalSamplingLevel, false);
 
-  for(unsigned int i=0; i<listOfNodes.size(); ++i)
+  Eigen::Vector3f refNormal;
+  if( config.entropyMode == sure::CROSSPRODUCTS_ALL_NORMALS_WITH_MAIN_NORMAL )
   {
-    if( listOfNodes[i]->value.statusOfNormal == sure::OctreeValue::NORMAL_STABLE && listOfNodes[i]->value.normalHistogram )
+    Eigen::Vector3f pos(treenode->closestPosition.p[0], treenode->closestPosition.p[1], treenode->closestPosition.p[2]);
+    if( !calculateNormal(pos, radius, refNormal) )
     {
-      (*treenode->value.entropyHistogram) += *(listOfNodes[i]->value.normalHistogram);
+      return 0.f;
     }
   }
-//  treenode->value.scale /= (config.histogramSize / config.normalSamplingRate) * (config.histogramSize / config.normalSamplingRate);
-  treenode->value.entropyHistogram->calculateEntropy();
-  treenode->value.entropy = treenode->value.entropyHistogram->entropy;
-}
 
-//! Calculates the entropy on a single node using a histogram of crossproducts between the center normal and surrounding normals
-template <typename PointT>
-void sure::SURE_Estimator<PointT>::calculateCrossProductEntropy(OctreeNode* treenode)
-{
-  std::vector<OctreeNode*> listOfNodes;
-  OctreePosition minPosition, maxPosition;
-  Eigen::Vector3f secNormal, refNormal;
-
-  if( calculateNormal(treenode, config.histogramRadius) )
+  switch( config.entropyMode )
   {
-    refNormal = Eigen::Vector3f(treenode->value.normal[0], treenode->value.normal[1], treenode->value.normal[2]);
-  }
-  else
-  {
-    return;
-  }
-
-  if( treenode->value.entropyHistogram )
-  {
-    treenode->value.entropyHistogram->clear();
-  }
-  else
-  {
-    treenode->value.entropyHistogram = histogramAllocator.allocate();
-  }
-
-  minPosition.p[0] = treenode->closestPosition.p[0] - config.histogramRadius;
-  minPosition.p[1] = treenode->closestPosition.p[1] - config.histogramRadius;
-  minPosition.p[2] = treenode->closestPosition.p[2] - config.histogramRadius;
-  maxPosition.p[0] = treenode->closestPosition.p[0] + config.histogramRadius;
-  maxPosition.p[1] = treenode->closestPosition.p[1] + config.histogramRadius;
-  maxPosition.p[2] = treenode->closestPosition.p[2] + config.histogramRadius;
-
-  octree->root->getAllNodesInVolumeOnSamplingDepth(listOfNodes, minPosition, maxPosition, config.normalSamplingLevel, false);
-
-  for(unsigned int i=0; i<listOfNodes.size(); ++i)
-  {
-    if( listOfNodes[i]->value.statusOfNormal == sure::OctreeValue::NORMAL_STABLE && listOfNodes[i]->value.normalHistogram )
-    {
-      secNormal = Eigen::Vector3f(listOfNodes[i]->value.normal[0], listOfNodes[i]->value.normal[1], listOfNodes[i]->value.normal[2]);
-      treenode->value.entropyHistogram->insertCrossProduct(refNormal, secNormal, (sure::NormalHistogram::WeightMethod) config.histogramWeightMethod);
-    }
-  }
-  treenode->value.entropyHistogram->calculateEntropy();
-  treenode->value.entropy = treenode->value.entropyHistogram->entropy;
-}
-
-
-//! Calculates the entropy on a single node using a histogram of crossproducts between the surrounding normals
-template <typename PointT>
-void sure::SURE_Estimator<PointT>::calculatePairwiseCrossProductEntropy(OctreeNode* treenode)
-{
-  std::vector<OctreeNode*> listOfNodes;
-  OctreePosition minPosition, maxPosition;
-  Eigen::Vector3f secNormal, refNormal;
-
-  if( treenode->value.entropyHistogram )
-  {
-    treenode->value.entropyHistogram->clear();
-  }
-  else
-  {
-    treenode->value.entropyHistogram = histogramAllocator.allocate();
-  }
-
-  minPosition.p[0] = treenode->closestPosition.p[0] - config.histogramRadius;
-  minPosition.p[1] = treenode->closestPosition.p[1] - config.histogramRadius;
-  minPosition.p[2] = treenode->closestPosition.p[2] - config.histogramRadius;
-  maxPosition.p[0] = treenode->closestPosition.p[0] + config.histogramRadius;
-  maxPosition.p[1] = treenode->closestPosition.p[1] + config.histogramRadius;
-  maxPosition.p[2] = treenode->closestPosition.p[2] + config.histogramRadius;
-
-  octree->root->getAllNodesInVolumeOnSamplingDepth(listOfNodes, minPosition, maxPosition, config.normalSamplingLevel, false);
-
-  for(unsigned int i=0; i<listOfNodes.size(); ++i)
-  {
-    for(unsigned int j=i+1; j<listOfNodes.size(); ++j)
-    {
-      if( listOfNodes[i]->value.statusOfNormal == sure::OctreeValue::NORMAL_STABLE && listOfNodes[j]->value.statusOfNormal == sure::OctreeValue::NORMAL_STABLE )
+    default:
+    case sure::NORMALS:
+      for(std::vector<OctreeNode*>::iterator it=listOfNodes.begin(); it!=listOfNodes.end(); ++it)
       {
-        Eigen::Vector3f refNormal(listOfNodes[i]->value.normal[0], listOfNodes[i]->value.normal[1], listOfNodes[i]->value.normal[2]);
-        Eigen::Vector3f secNormal(listOfNodes[j]->value.normal[0], listOfNodes[j]->value.normal[1], listOfNodes[j]->value.normal[2]);
-        treenode->value.entropyHistogram->insertCrossProduct(refNormal, secNormal, (sure::NormalHistogram::WeightMethod) config.histogramWeightMethod);
+        if( (*it)->value.statusOfNormal == sure::OctreeValue::NORMAL_STABLE )
+        {
+          entropyHistogram += (*it)->value.getHistogram();
+        }
       }
-    }
+      break;
+    case sure::CROSSPRODUCTS_ALL_NORMALS_WITH_MAIN_NORMAL:
+      for(std::vector<OctreeNode*>::iterator it=listOfNodes.begin(); it!=listOfNodes.end(); ++it)
+      {
+        if( (*it)->value.statusOfNormal == sure::OctreeValue::NORMAL_STABLE )
+        {
+          Eigen::Vector3f secNormal((*it)->value.normal[0], (*it)->value.normal[1], (*it)->value.normal[2]);
+          entropyHistogram.insertCrossProduct(refNormal, secNormal, (sure::CrossProductWeightMethod) config.cpWeightMethod);
+        }
+      }
+      break;
+    case sure::CROSSPRODUCTS_ALL_NORMALS_PAIRWISE:
+      for(std::vector<OctreeNode*>::iterator first=listOfNodes.begin(); first!=listOfNodes.end(); ++first)
+      {
+        for(std::vector<OctreeNode*>::iterator second=first+1; second!=listOfNodes.end(); ++second)
+        {
+          if( (*first)->value.statusOfNormal == sure::OctreeValue::NORMAL_STABLE && (*second)->value.statusOfNormal == sure::OctreeValue::NORMAL_STABLE )
+          {
+            refNormal = Eigen::Vector3f((*first)->value.normal[0], (*first)->value.normal[1], (*first)->value.normal[2]);
+            Eigen::Vector3f secNormal((*second)->value.normal[0], (*second)->value.normal[1], (*second)->value.normal[2]);
+            entropyHistogram.insertCrossProduct(refNormal, secNormal, (sure::CrossProductWeightMethod) config.cpWeightMethod);
+          }
+        }
+      }
+      break;
   }
-  treenode->value.entropyHistogram->calculateEntropy();
-  treenode->value.entropy = treenode->value.entropyHistogram->entropy;
+
+//  entropyHistogram.print();
+  entropyHistogram.calculateEntropy();
+  return entropyHistogram.entropy;
 }
 
 //! Calculates the internal feature map
@@ -813,12 +753,16 @@ void sure::SURE_Estimator<PointT>::extractFeature()
         currentNode->value.statusOfMaximum = sure::OctreeValue::MAXIMUM_POSSIBLE;
       }
     }
+    else if( config.minimumCornerness3D == 0.f )
+    {
+      currentNode->value.statusOfMaximum  = sure::OctreeValue::MAXIMUM_POSSIBLE;
+    }
   }
 
   for(unsigned int i=0; i<octreeMap[level].size(); ++i)
   {
     OctreeNode* currentNode = octreeMap[level][i];
-    if( currentNode->value.statusOfMaximum != sure::OctreeValue::MAXIMUM_POSSIBLE)
+    if( currentNode->value.statusOfMaximum != sure::OctreeValue::MAXIMUM_POSSIBLE )
     {
       continue;
     }
@@ -835,6 +779,7 @@ void sure::SURE_Estimator<PointT>::extractFeature()
     octree->root->getAllNodesInVolumeOnSamplingDepth(neighbours, minPosition, maxPosition, level, false);
 
     const float& referenceEntropy = currentNode->value.entropy;
+    bool isMaximum = true;
 
     for(unsigned int j=0; j<neighbours.size(); ++j)
     {
@@ -845,18 +790,18 @@ void sure::SURE_Estimator<PointT>::extractFeature()
       }
       if( neighbours[j]->value.statusOfMaximum == sure::OctreeValue::MAXIMUM_FOUND )
       {
-        octreeMap[level][i]->value.statusOfMaximum = sure::OctreeValue::MAXIMUM_NOT_POSSIBLE;
+        isMaximum = false;
         break;
       }
       if( neighbours[j]->value.statusOfMaximum == sure::OctreeValue::MAXIMUM_POSSIBLE && neighbours[j]->value.entropy > referenceEntropy )
       {
-        octreeMap[level][i]->value.statusOfMaximum = sure::OctreeValue::MAXIMUM_NOT_POSSIBLE;
+        isMaximum = false;
         break;
       }
     }
 
     // If feature is still marked, push to featureVector
-    if( octreeMap[level][i]->value.statusOfMaximum == sure::OctreeValue::MAXIMUM_POSSIBLE )
+    if( isMaximum )
     {
       octreeMap[level][i]->value.statusOfMaximum = sure::OctreeValue::MAXIMUM_FOUND;
       features.push_back(createFeature(octreeMap[level][i]));
@@ -1007,7 +952,7 @@ sure::Feature sure::SURE_Estimator<PointT>::createFeature(int index)
 {
   Eigen::Vector3f pos;
   sure::Feature feature;
-  if( index >= 0 && index < (int) input_->points.size() && !isinf(input_->points[index].x) && !isinf(input_->points[index].y) && !isinf(input_->points[index].z) )
+  if( index >= 0 && index < (int) input_->points.size() && std::isfinite(input_->points[index].x) && std::isfinite(input_->points[index].y) && std::isfinite(input_->points[index].z) )
   {
     pos[0] = input_->points[index].x;
     pos[1] = input_->points[index].y;

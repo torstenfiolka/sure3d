@@ -33,13 +33,13 @@ include_directories(include src)
 
 set(srcs
 	src/sure/normal_histogram.cpp
-	src/sure/normal_histogram_allocator.cpp
 	src/sure/octree_value.cpp
 	src/sure/configuration.cpp
 	src/sure/surflet.cpp
 	src/sure/color_surflet.cpp
 	src/sure/map2d.cpp
 	src/sure/range_image.cpp
+	src/sure/histogram_base.cpp
 	src/sure/histogram_l2.cpp
 	src/sure/histogram_emd.cpp
 	src/sure/hue_descriptor.cpp
@@ -50,9 +50,11 @@ set(srcs
 	)
 
 add_library(${PROJECT_NAME} SHARED ${srcs})
-target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} ${Boost_LIBRARIES})
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION 0.1) 
+target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} ${Boost_LIBRARIES} -lboost_serialization)
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION 0.2) 
 
 add_executable(test_sure src/test_sure.cpp)
 target_link_libraries(test_sure ${PROJECT_NAME} ${PCL_LIBRARIES})
 
+#add_executable(test_serialization src/test_serialization.cpp)
+#target_link_libraries(test_serialization ${PROJECT_NAME} ${PCL_LIBRARIES} ${Boost_LIBRARIES} -lboost_serialization)

@@ -151,22 +151,24 @@ template <typename PointT>
 typename sure::RangeImage<PointT>::Border sure::RangeImage<PointT>::calculateBorder(int index, float& dist) const
 {
   const int x = index % this->width, y = index / this->width;
-  float minDist = sure::MAX_USED_POINT_DISTANCE, maxDist = 0.f, referenceDistance = this->at(x, y);
+  float minDist = sure::MAX_USED_POINT_DISTANCE, maxDist = 0.f;
+  const float& referenceDistance = this->at(x, y);
   sure::RangeImage<PointT>::Border ret = sure::RangeImage<PointT>::NONE;
   dist = 0.f;
 
   if( !this->exists(x, y) || isinf(referenceDistance) || referenceDistance == sure::MAX_USED_POINT_DISTANCE )
   {
-    return ret;
-  }
-
-  if( x == 0 || y == 0 || x == (int) width-1 || y == (int) height-1 )
-  {
+    dist = sure::MAX_USED_POINT_DISTANCE;
     return sure::RangeImage<PointT>::BACKGROUND;
   }
 
-  for(int i=1; i<PIXEL_RANGE; ++i)
+  for(int i=1; true; ++i)
   {
+    if( x+i >= (int) width-1 )
+    {
+      dist = sure::MAX_USED_POINT_DISTANCE;
+      return sure::RangeImage<PointT>::BACKGROUND;
+    }
     const float& currDist = this->at(x+i, y);
     if( !isinf(currDist) )
     {
@@ -176,8 +178,13 @@ typename sure::RangeImage<PointT>::Border sure::RangeImage<PointT>::calculateBor
     }
   }
 
-  for(int i=1; i<PIXEL_RANGE; ++i)
+  for(int i=1; true; ++i)
   {
+    if( x-i <= 0 )
+    {
+      dist = sure::MAX_USED_POINT_DISTANCE;
+      return sure::RangeImage<PointT>::BACKGROUND;
+    }
     const float& currDist = this->at(x-i, y);
     if( !isinf(currDist) )
     {
@@ -187,8 +194,13 @@ typename sure::RangeImage<PointT>::Border sure::RangeImage<PointT>::calculateBor
     }
   }
 
-  for(int i=1; i<PIXEL_RANGE; ++i)
+  for(int i=1; true; ++i)
   {
+    if( y+i >= (int) height-1 )
+    {
+      dist = sure::MAX_USED_POINT_DISTANCE;
+      return sure::RangeImage<PointT>::BACKGROUND;
+    }
     const float& currDist = this->at(x, y+i);
     if( !isinf(currDist) )
     {
@@ -198,8 +210,13 @@ typename sure::RangeImage<PointT>::Border sure::RangeImage<PointT>::calculateBor
     }
   }
 
-  for(int i=1; i<PIXEL_RANGE; ++i)
+  for(int i=1; true; ++i)
   {
+    if( y-i <= 0 )
+    {
+      dist = sure::MAX_USED_POINT_DISTANCE;
+      return sure::RangeImage<PointT>::BACKGROUND;
+    }
     const float& currDist = this->at(x, y-i);
     if( !isinf(currDist) )
     {
@@ -272,14 +289,14 @@ void sure::RangeImage<PointT>::calculateBorderMap()
 
   for(unsigned int i=0; i<indices_->size(); ++i)
   {
-    if( !isinf(this->at(i)) && this->at(i) < sure::MAX_USED_POINT_DISTANCE )
-    {
       borderMap.set(i, calculateBorder(i, dummy));
-    }
-    else
-    {
-      borderMap.set(i, sure::RangeImage<PointT>::NONE);
-    }
+//    if( !isinf(this->at(i)) && this->at(i) < sure::MAX_USED_POINT_DISTANCE )
+//    {
+//    }
+//    else
+//    {
+//      borderMap.set(i, sure::RangeImage<PointT>::NONE);
+//    }
   }
 }
 

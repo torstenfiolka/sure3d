@@ -31,57 +31,13 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <sure/normal_histogram_allocator.h>
+#include <sure/histogram_base.h>
 
-sure::HistogramAllocator::HistogramAllocator() : array(NULL), current(NULL)
+void sure::HistogramBase::print() const
 {
-  reset();
+  std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Histogram Size: " << histogramSize << " Bin Size: " << binSize << std::endl;
+  std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Min: " << minimum << " Max: " << maximum << " Range: " << range << std::endl;
+  std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Histogram Weight: " << histogramWeight << " Number of Points: " << numberOfPoints << " Normalized: " << isNormalized() << std::endl;
 }
 
-sure::HistogramAllocator::HistogramAllocator(unsigned int size) : array(NULL), current(NULL)
-{
-  reset(size);
-}
-
-sure::HistogramAllocator::~HistogramAllocator()
-{
-  if( array )
-  {
-    delete[] array;
-  }
-}
-
-void sure::HistogramAllocator::reset(unsigned int size)
-{
-  if( array )
-  {
-    delete[] array;
-  }
-
-  array = new sure::NormalHistogram[size];
-  this->size = size;
-
-  current = &array[0];
-  used = 0;
-}
-
-void sure::HistogramAllocator::clear()
-{
-  for(unsigned int i=0; i<used; ++i)
-  {
-    array[i].clear();
-  }
-  used = 0;
-  current = &array[0];
-}
-
-sure::NormalHistogram* sure::HistogramAllocator::allocate()
-{
-  used++;
-  if( used >= size )
-  {
-    std::cerr << "--- Histogram Allocator exceeded size! ---"<< std::endl;
-    return NULL;
-  }
-  return current++;
-}
+BOOST_CLASS_VERSION(sure::HistogramBase, 0)

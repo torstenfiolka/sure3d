@@ -77,9 +77,11 @@ void sure::convertRGBtoHSL(const float r, const float g, const float b, double& 
   }
 }
 
-std::ostream& sure::operator<<(std::ostream& stream, const sure::ColorSurflet& rhs)
-{
-  stream << (sure::Surflet) rhs;
-  stream << std::fixed << std::setprecision(3) << "[ColorSurflet] RGB: " << rhs.r << " / " << rhs.g << " / " << rhs.b << std::endl;
-  return stream;
-}
+//std::ostream& sure::operator<<(std::ostream& stream, const sure::ColorSurflet& rhs)
+//{
+//  stream << (sure::Surflet) rhs;
+//  stream << std::fixed << std::setprecision(3) << "[ColorSurflet] RGB: " << rhs.r << " / " << rhs.g << " / " << rhs.b << std::endl;
+//  return stream;
+//}
+
+BOOST_CLASS_VERSION(sure::ColorSurflet, 0)

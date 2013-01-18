@@ -60,6 +60,11 @@ namespace spatialaggregate {
   class OcTreePosition {
     public:
       OcTreePosition() {}
+      OcTreePosition(CoordType x, CoordType y, CoordType z) {
+        p[0] = x;
+        p[1] = y;
+        p[2] = z;
+      }
       ~OcTreePosition() {}
 
       CoordType& operator[](const int rhs) {
@@ -252,7 +257,7 @@ namespace spatialaggregate {
       OcTreeNode< CoordType, ValueType >* addPoint( OcTreeNode< CoordType, ValueType >* leaf, CoordType minimumVolumeSize );
       OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize );
 
-      void getPointsInVolume( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
+      unsigned int getPointsInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 
       void getAllNodesInVolume( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 
@@ -265,6 +270,8 @@ namespace spatialaggregate {
       void applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, OcTreeNode< CoordType, ValueType >* current, void* data ), const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
 
       OcTreeNode< CoordType, ValueType >* getTightestNode( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
+
+      OcTreeNode< CoordType, ValueType >* getNodeOnLevel(const spatialaggregate::OcTreePosition< CoordType >& position, unsigned int level);
 
       void collectNodesInDepthRange( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, unsigned int minDepth, unsigned int maxDepth );
 
@@ -386,7 +393,7 @@ namespace spatialaggregate {
       OcTreeNode< CoordType, ValueType >* getClosestPoint( const OcTreePosition< CoordType >& position );
 
       // complete tree
-      std::vector< OcTreeNode< CoordType, ValueType >* > getPointsInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
+      unsigned int getPointsInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 
       std::vector< OcTreeNode< CoordType, ValueType >* > getAllNodesInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 
@@ -398,6 +405,7 @@ namespace spatialaggregate {
 
       void applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, OcTreeNode< CoordType, ValueType >* current, void* data ), const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 
+      OcTreeNode< CoordType, ValueType >* getNodeOnLevel(const spatialaggregate::OcTreePosition< CoordType >& position, unsigned int level);
 
       OcTreeNode< CoordType, ValueType >* root;
 

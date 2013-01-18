@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -88,6 +88,22 @@ protected:
 
   template<unsigned int size>
   friend std::ostream& operator<<(std::ostream& stream, const sure::DescriptorHistogramWithEMDistance<size>& rhs);
+
+private:
+
+  DescriptorHistogramWithEMDistance() : sure::HistogramBase(0, 0.0, 0.0, "") {}
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & boost::serialization::base_object<sure::HistogramBase>(*this);
+    for(unsigned int i=0; i<histogram.size(); ++i)
+    {
+      ar & histogram.at(i);
+    }
+  }
 
 };
 
