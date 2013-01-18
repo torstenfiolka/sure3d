@@ -1,0 +1,11 @@
+0.1.2: Oct 11th, 2012
+
+- Another Fix for the range image not correctly calculating the view direction
+
+0.1.1: Oct 8th, 2012
+
+- Fixed the range image not correctly calculating the view direction
+- Completed the configuration interface so far and renamed some internal variables to make them more intelligible
+
+0.1, Oct 5th, 2012: Initial Release 
+
