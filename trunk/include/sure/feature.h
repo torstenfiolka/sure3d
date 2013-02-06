@@ -94,7 +94,7 @@ public:
 
   bool hasNormalizedDescriptors() const;
 
-  double distanceTo(const sure::Feature& rhs, double shapeWeight = 1.0, double colorWeight = 1.0, double lightnessWeight = 1.0) const;
+  double distanceTo(const sure::Feature& rhs, double shapeWeight, double colorWeight, double lightnessWeight) const;
   double distanceTo(const sure::Feature& rhs) const;
 
   int determineDistanceClass(const sure::Surflet& surflet);

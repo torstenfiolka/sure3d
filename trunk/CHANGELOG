@@ -1,3 +1,7 @@
+0.21: Feb 6th, 2013
+
+- Corrected the ambiguous call of sure::Feature::distanceTo
+
 0.2: Jan 18th, 2013
 
 - Implemented sure::Feature serialization with Boost::serialization 
