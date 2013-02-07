@@ -1,4 +1,8 @@
-0.21: Feb 6th, 2013
+0.2.2: Feb 7th, 2013
+
+- Implemented serialization for sure::Configuration
+
+0.2.1: Feb 6th, 2013
 
 - Corrected the ambiguous call of sure::Feature::distanceTo
 

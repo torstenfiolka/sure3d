@@ -83,7 +83,6 @@ int sure::Configuration::getSamplingMapIndex(float resolution) const
   return bestLevel;
 }
 
-
 std::ostream& sure::operator<<(std::ostream& stream, const sure::Configuration& config)
 {
   stream << "#\n" << "# Configuration\n" << "#\n";
@@ -95,3 +94,5 @@ std::ostream& sure::operator<<(std::ostream& stream, const sure::Configuration& 
   stream << "# Octree Expansion: " << config.octreeExpansion << " Minimum Volume Size: " << config.octreeMinimumVolumeSize << " (Level " << config.getSamplingMapIndex(config.octreeMinimumVolumeSize) << ") Limited resolution: " << config.limitOctreeResolution << " (" << config.octreeResolutionThreshold << ")\n#\n";
   return stream;
 }
+
+BOOST_CLASS_VERSION(sure::Configuration, 0)

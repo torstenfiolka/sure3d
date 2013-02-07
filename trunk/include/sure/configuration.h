@@ -40,121 +40,161 @@
 #include <cmath>
 #include <sstream>
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/version.hpp>
+#include <boost/serialization/base_object.hpp>
+
 namespace sure {
 
-enum EntropyCalculationMode
-{
-  NORMALS = 0,
-  CROSSPRODUCTS_ALL_NORMALS_WITH_MAIN_NORMAL,
-  CROSSPRODUCTS_ALL_NORMALS_PAIRWISE
-};
-
-enum CrossProductWeightMethod
-{
-  NO_WEIGHT = 0,
-  INVERSE_ABSOLUTE_DOT_PRODUCT,
-  INVERSE_POSITIVE_DOT_PRODUCT,
-  EXCLUSION
-};
-
-//! stores configuration data
-class Configuration
-{
-public:
-
-
-  Configuration()
+  enum EntropyCalculationMode
   {
-    reset();
-  }
+    NORMALS = 0,
+    CROSSPRODUCTS_ALL_NORMALS_WITH_MAIN_NORMAL,
+    CROSSPRODUCTS_ALL_NORMALS_PAIRWISE
+  };
 
-  void reset();
-
-  void setSamplingRate(float rate) { this->samplingRate = rate; this->samplingLevel = this->getSamplingMapIndex(rate); }
-  void setSize(float size) { this->histogramSize = size; this->histogramRadius = size*0.5f; this->featureInfluenceRadius = size; }
-  void setNormalsScale(float scale) { this->normalScale = scale; this->normalScaleRadius = scale*0.5f; }
-  void setNormalSamplingRate(float rate) { this->normalSamplingRate = rate; this->normalSamplingLevel = this->getSamplingMapIndex(rate); }
-
-  float getSamplingRate() const { return samplingRate; }
-  unsigned int getSamplingLevel() const { return samplingLevel; }
-  float getSize() const { return histogramSize; }
-  float getNormalSamplingRate() const { return normalSamplingRate; }
-  unsigned int getNormalSamplingLevel() const { return normalSamplingLevel; }
-  float getNormalScale() const { return normalScale; }
-
-  float getOctreeMinimumVolumeSize() const { return octreeMinimumVolumeSize; }
-  float getOctreeExpansion() const { return octreeExpansion; }
-  float getOctreeResolutionThreshold() const { return octreeResolutionThreshold; }
-
-  //! returns the index of the nearest sampling resolution to a given resolution
-  int getSamplingMapIndex(float resolution) const;
-
-  void setEntropyCalculationMode(EntropyCalculationMode mode) { this->entropyMode = mode; }
-  void setCrossProducteWeightMethod(CrossProductWeightMethod method) { this->cpWeightMethod = method; }
-
-  void setFeatureInfluenceRadius(float radius) { this->featureInfluenceRadius = radius; }
-  void setMinimumCornerness(float cornerness) { this->minimumCornerness3D = cornerness; }
-  void setMinimumEntropy(float entropy) { this->minimumEntropy = entropy; }
-
-  void setOctreeMinimumVolumeSize(float size)
+  enum CrossProductWeightMethod
   {
-    this->octreeMinimumVolumeSize = size;
-    this->setSamplingRate(this->samplingRate);
-    this->setNormalSamplingRate(this->normalSamplingRate);
-  }
-  void setOctreeExpansion(float expansion)
+    NO_WEIGHT = 0,
+    INVERSE_ABSOLUTE_DOT_PRODUCT,
+    INVERSE_POSITIVE_DOT_PRODUCT,
+    EXCLUSION
+  };
+
+  //! stores configuration data
+  class Configuration
   {
-    this->octreeExpansion = expansion;
-    this->setSamplingRate(this->samplingRate);
-    this->setNormalSamplingRate(this->normalSamplingRate);
-  }
-  void setOctreeResolutionThreshold(float threshold) { this->octreeResolutionThreshold = threshold; }
+    public:
 
-  void setAdditionalPointsOnDepthBorders(bool addPoints) { this->additionalPointsOnDepthBorders = addPoints; }
-  void setIgnoreBackgroundDetections(bool ignore) { this->ignoreBackgroundDetections = ignore; }
-  void setImprovedLocalization(bool localize) { this->improvedLocalization = localize; }
-  void setLimitOctreeResolution(bool limit) { this->limitOctreeResolution = limit; }
 
-protected:
+      Configuration()
+    {
+        reset();
+    }
 
-  float samplingRate;
-  unsigned int samplingLevel;
+      void reset();
 
-  float histogramSize;
-  float histogramRadius;
+      void setSamplingRate(float rate) { this->samplingRate = rate; this->samplingLevel = this->getSamplingMapIndex(rate); }
+      void setSize(float size) { this->histogramSize = size; this->histogramRadius = size*0.5f; this->featureInfluenceRadius = size; }
+      void setNormalsScale(float scale) { this->normalScale = scale; this->normalScaleRadius = scale*0.5f; }
+      void setNormalSamplingRate(float rate) { this->normalSamplingRate = rate; this->normalSamplingLevel = this->getSamplingMapIndex(rate); }
 
-  float normalScale;
-  float normalScaleRadius;
+      float getSamplingRate() const { return samplingRate; }
+      unsigned int getSamplingLevel() const { return samplingLevel; }
+      float getSize() const { return histogramSize; }
+      float getNormalSamplingRate() const { return normalSamplingRate; }
+      unsigned int getNormalSamplingLevel() const { return normalSamplingLevel; }
+      float getNormalScale() const { return normalScale; }
 
-  float normalSamplingRate;
-  unsigned int normalSamplingLevel;
+      float getOctreeMinimumVolumeSize() const { return octreeMinimumVolumeSize; }
+      float getOctreeExpansion() const { return octreeExpansion; }
+      float getOctreeResolutionThreshold() const { return octreeResolutionThreshold; }
 
-  float featureInfluenceRadius;
-  float minimumEntropy;
-  float minimumCornerness3D;
-  float curvatureRadius;
+      //! returns the index of the nearest sampling resolution to a given resolution
+      int getSamplingMapIndex(float resolution) const;
 
-  EntropyCalculationMode entropyMode;
+      void setEntropyCalculationMode(EntropyCalculationMode mode) { this->entropyMode = mode; }
+      void setCrossProducteWeightMethod(CrossProductWeightMethod method) { this->cpWeightMethod = method; }
 
-  float octreeMinimumVolumeSize;
-  float octreeExpansion;
-  float octreeResolutionThreshold;
+      void setFeatureInfluenceRadius(float radius) { this->featureInfluenceRadius = radius; }
+      void setMinimumCornerness(float cornerness) { this->minimumCornerness3D = cornerness; }
+      void setMinimumEntropy(float entropy) { this->minimumEntropy = entropy; }
 
-  bool additionalPointsOnDepthBorders;
-  bool ignoreBackgroundDetections;
-  bool improvedLocalization;
-  bool limitOctreeResolution;
+      void setOctreeMinimumVolumeSize(float size)
+      {
+        this->octreeMinimumVolumeSize = size;
+        this->setSamplingRate(this->samplingRate);
+        this->setNormalSamplingRate(this->normalSamplingRate);
+      }
+      void setOctreeExpansion(float expansion)
+      {
+        this->octreeExpansion = expansion;
+        this->setSamplingRate(this->samplingRate);
+        this->setNormalSamplingRate(this->normalSamplingRate);
+      }
+      void setOctreeResolutionThreshold(float threshold) { this->octreeResolutionThreshold = threshold; }
 
-  CrossProductWeightMethod cpWeightMethod;
+      void setAdditionalPointsOnDepthBorders(bool addPoints) { this->additionalPointsOnDepthBorders = addPoints; }
+      void setIgnoreBackgroundDetections(bool ignore) { this->ignoreBackgroundDetections = ignore; }
+      void setImprovedLocalization(bool localize) { this->improvedLocalization = localize; }
+      void setLimitOctreeResolution(bool limit) { this->limitOctreeResolution = limit; }
 
-  template <typename PointT>
-  friend class SURE_Estimator;
+    protected:
 
-  friend std::ostream& operator<<(std::ostream& stream, const sure::Configuration& config);
+      float samplingRate;
+      unsigned int samplingLevel;
 
-};
+      float histogramSize;
+      float histogramRadius;
 
-std::ostream& operator<<(std::ostream& stream, const sure::Configuration& config);
+      float normalScale;
+      float normalScaleRadius;
+
+      float normalSamplingRate;
+      unsigned int normalSamplingLevel;
+
+      float featureInfluenceRadius;
+      float minimumEntropy;
+      float minimumCornerness3D;
+      float curvatureRadius;
+
+      EntropyCalculationMode entropyMode;
+
+      float octreeMinimumVolumeSize;
+      float octreeExpansion;
+      float octreeResolutionThreshold;
+
+      bool additionalPointsOnDepthBorders;
+      bool ignoreBackgroundDetections;
+      bool improvedLocalization;
+      bool limitOctreeResolution;
+
+      CrossProductWeightMethod cpWeightMethod;
+
+      template <typename PointT>
+      friend class SURE_Estimator;
+
+      friend std::ostream& operator<<(std::ostream& stream, const sure::Configuration& config);
+
+      friend class boost::serialization::access;
+
+      template<class Archive>
+      void serialize(Archive &ar, const unsigned int version)
+      {
+          ar & samplingRate;
+          ar & samplingLevel;
+
+          ar & histogramSize;
+          ar & histogramRadius;
+
+          ar & normalScale;
+          ar & normalScaleRadius;
+
+          ar & normalSamplingRate;
+          ar & normalSamplingLevel;
+
+          ar & featureInfluenceRadius;
+          ar & minimumEntropy;
+          ar & minimumCornerness3D;
+          ar & curvatureRadius;
+
+          ar & entropyMode;
+
+          ar & octreeMinimumVolumeSize;
+          ar & octreeExpansion;
+          ar & octreeResolutionThreshold;
+
+          ar & additionalPointsOnDepthBorders;
+          ar & ignoreBackgroundDetections;
+          ar & improvedLocalization;
+          ar & limitOctreeResolution;
+
+          ar & cpWeightMethod;
+      }
+
+  };
+
+  std::ostream& operator<<(std::ostream& stream, const sure::Configuration& config);
 
 }
 
