@@ -1,3 +1,7 @@
+0.2.3: Feb 8th, 2013
+
+- Fixed a bug in the default constructor of sure::Configuration, which caused an invalid configuration after creating
+
 0.2.2: Feb 7th, 2013
 
 - Implemented serialization for sure::Configuration

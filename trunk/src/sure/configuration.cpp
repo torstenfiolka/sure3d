@@ -35,35 +35,28 @@
 
 void sure::Configuration::reset()
 {
-  samplingRate = 0.04f;
-  histogramSize = samplingRate * 3.f;
-  normalSamplingRate = samplingRate * 0.5f;
+  setOctreeMinimumVolumeSize(0.01f);
+  setOctreeExpansion(40.96f);
+  setOctreeResolutionThreshold(0.004f);
 
-  samplingLevel = getSamplingMapIndex(samplingRate);
+  setSamplingRate(0.04f);
+  setSize(3.f * getSamplingRate());
+  setNormalsScale(getSamplingRate());
+  setNormalSamplingRate(0.5f * getSamplingRate());
 
-  histogramRadius = histogramSize * 0.5f;
+  setEntropyCalculationMode(sure::NORMALS);
+  setCrossProducteWeightMethod(sure::INVERSE_ABSOLUTE_DOT_PRODUCT);
 
-  normalSamplingLevel = getSamplingMapIndex(normalSamplingRate);
-  normalScale = samplingRate;
-  normalScaleRadius = normalScale * 0.5f;
+  setFeatureInfluenceRadius(getSize() * 0.5f);
+  setMinimumCornerness(0.15f);
+  setMinimumEntropy(0.6f);
+
+  setAdditionalPointsOnDepthBorders(true);
+  setIgnoreBackgroundDetections(true);
+  setImprovedLocalization(true);
+  setLimitOctreeResolution(true);
+
   curvatureRadius = normalSamplingRate*1.5f;
-
-  featureInfluenceRadius = histogramRadius * 2.f;
-
-  minimumEntropy = 0.6f;
-  minimumCornerness3D = 0.15f;
-
-  entropyMode = sure::NORMALS;
-  cpWeightMethod = sure::INVERSE_ABSOLUTE_DOT_PRODUCT;
-
-  additionalPointsOnDepthBorders = false;
-  ignoreBackgroundDetections = false;
-  improvedLocalization = true;
-  limitOctreeResolution = true;
-
-  octreeMinimumVolumeSize = 0.01f;
-  octreeExpansion = 40.96f;
-  octreeResolutionThreshold = 0.004;
 }
 
 int sure::Configuration::getSamplingMapIndex(float resolution) const

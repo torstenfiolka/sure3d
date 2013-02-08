@@ -74,11 +74,6 @@ namespace sure {
 
       void reset();
 
-      void setSamplingRate(float rate) { this->samplingRate = rate; this->samplingLevel = this->getSamplingMapIndex(rate); }
-      void setSize(float size) { this->histogramSize = size; this->histogramRadius = size*0.5f; this->featureInfluenceRadius = size; }
-      void setNormalsScale(float scale) { this->normalScale = scale; this->normalScaleRadius = scale*0.5f; }
-      void setNormalSamplingRate(float rate) { this->normalSamplingRate = rate; this->normalSamplingLevel = this->getSamplingMapIndex(rate); }
-
       float getSamplingRate() const { return samplingRate; }
       unsigned int getSamplingLevel() const { return samplingLevel; }
       float getSize() const { return histogramSize; }
@@ -92,6 +87,11 @@ namespace sure {
 
       //! returns the index of the nearest sampling resolution to a given resolution
       int getSamplingMapIndex(float resolution) const;
+
+      void setSamplingRate(float rate) { this->samplingRate = rate; this->samplingLevel = this->getSamplingMapIndex(rate); }
+      void setSize(float size) { this->histogramSize = size; this->histogramRadius = size*0.5f; this->featureInfluenceRadius = size; }
+      void setNormalsScale(float scale) { this->normalScale = scale; this->normalScaleRadius = scale*0.5f; }
+      void setNormalSamplingRate(float rate) { this->normalSamplingRate = rate; this->normalSamplingLevel = this->getSamplingMapIndex(rate); }
 
       void setEntropyCalculationMode(EntropyCalculationMode mode) { this->entropyMode = mode; }
       void setCrossProducteWeightMethod(CrossProductWeightMethod method) { this->cpWeightMethod = method; }

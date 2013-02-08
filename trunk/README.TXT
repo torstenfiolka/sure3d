@@ -2,7 +2,7 @@
 SURE 3D Features
 ----------------
 
-Version: 0.2.2, February 2013
+Version: 0.2.3, February 2013
 
 This directory contains the source code for the SURE 3D Features.
 Please note that the code API is _NOT_ stable and might change in future versions.  
