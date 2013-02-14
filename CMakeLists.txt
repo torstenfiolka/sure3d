@@ -51,7 +51,7 @@ set(srcs
 
 add_library(${PROJECT_NAME} SHARED ${srcs})
 target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} ${Boost_LIBRARIES} -lboost_serialization)
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION 0.2.3) 
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION 0.2.5) 
 
 add_executable(test_sure src/test_sure.cpp)
 target_link_libraries(test_sure ${PROJECT_NAME} ${PCL_LIBRARIES})
