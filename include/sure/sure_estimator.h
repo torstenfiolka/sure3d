@@ -67,7 +67,6 @@ namespace sure
   const unsigned int MINIMUM_POINTS_FOR_NORMAL = 5;
 
   float calculateCornerness(const std::vector<OctreeNode*>& nodes);
-  void orientateNormal(Eigen::Vector3f& normal, const Eigen::Vector3f& origin);
 
   template<typename Derived>
   bool is_finite(const Eigen::MatrixBase<Derived>& x)
@@ -148,12 +147,12 @@ namespace sure
 
     void calculateNormals();
     void calculateNormals(unsigned int level, float radius);
-    bool calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const Eigen::Vector3f& pos);
-    bool calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const OctreePosition& pos);
-    bool calculateNormal(OctreeNode* node);
-    bool calculateNormal(OctreeNode* node, float radius);
-    bool calculateNormal(const OctreePosition& position, float radius, float normal[3]);
+    bool calculateNormal(sure::OctreeNode* node, float radius = 0.f, int count = -1);
     bool calculateNormal(const Eigen::Vector3f& position, float radius, Eigen::Vector3f& normal);
+
+    void orientateNormal(Eigen::Vector3f& normal, const Eigen::Vector3f& position);
+    void orientateNormal(Eigen::Vector3f& normal, const OctreePosition& position);
+    void orientateNormal(float& normal1, float& normal2, float& normal3, const OctreePosition& position);
 
     //
     //  Feature calculation
