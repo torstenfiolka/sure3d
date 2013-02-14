@@ -106,9 +106,9 @@ private:
   void serialize(Archive &ar, const unsigned int version)
   {
     ar & boost::serialization::base_object<sure::Surflet>(*this);
-    ar & r;
-    ar & g;
-    ar & b;
+    ar & mRed;
+    ar & mGreen;
+    ar & mBlue;
   }
 
 };

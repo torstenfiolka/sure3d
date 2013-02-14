@@ -1,3 +1,7 @@
+0.2.5: Feb 14th, 2013
+
+- Fixed a bug in serialization of sure::ColorSurflet introduced with 0.2.4
+
 0.2.4: Feb 14th, 2013
 
 - Refactored sure::Surflet, sure::ColorSurflet and sure::Feature and made all member variables protected
