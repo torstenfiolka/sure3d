@@ -77,37 +77,6 @@ float sure::calculateCornerness(const std::vector<OctreeNode*>& nodes)
   return eigenValues(0) / eigenValues(2);
 }
 
-//! orientates a normal to the viewpoint
-void sure::orientateNormal(Eigen::Vector3f& normal, const Eigen::Vector3f& point)
-{
-  float dotProduct = normal.dot(point);
-//  unsigned int index = 0;
-//  while( fabs(dotProduct) < 1e-1 && index < 7 )
-//  {
-//    Eigen::Vector3f farPoint(Eigen::Vector3f::Zero());
-//    if( index % 2 == 0 )
-//    {
-//      farPoint[0] = 1000.f;
-//    }
-//    if( (index / 2) % 2 == 0 )
-//    {
-//      farPoint[1] = 1000.f;
-//    }
-//    if( index % 4 == 0 )
-//    {
-//      farPoint[2] = 1000.f;
-//    }
-//    dotProduct = normal.dot(farPoint);
-//    index++;
-//  }
-  if( dotProduct < 0.f )
-  {
-    normal[0] = -normal[0];
-    normal[1] = -normal[1];
-    normal[2] = -normal[2];
-  }
-}
-
 //
 //  Methods for data and organisational purposes
 //
@@ -376,27 +345,14 @@ void sure::SURE_Estimator<PointT>::calculateNormals()
 template <typename PointT>
 void sure::SURE_Estimator<PointT>::calculateNormals(unsigned int level, float radius)
 {
-  bool inNode = radius*2.f < octreeNodeSizeByDepth[level];
-
 //  std::cout << "Calculating normals on level " << level << " (" << octreeNodeSizeByDepth[level] << " cm) with radius " << radius << " cm." << std::endl;
 
 //#pragma omp parallel for schedule(dynamic)
   for(std::vector<OctreeNode*>::iterator it=octreeMap[level].begin(); it!=octreeMap[level].end(); ++it)
   {
-//    if( (*it)->value.statusOfNormal != sure::OctreeValue::NORMAL_NOT_CALCULATED )
-//    {
-//      continue;
-//    }
-    if( inNode )
-    {
-      calculateNormal((*it));
-      (*it)->value.calculateHistogram();
-    }
-    else
-    {
-      calculateNormal((*it), radius);
-      (*it)->value.calculateHistogram();
-    }
+    calculateNormal((*it), radius);
+    orientateNormal((*it)->value.normal[0], (*it)->value.normal[1], (*it)->value.normal[2], (*it)->closestPosition);
+    (*it)->value.calculateHistogram();
   }
 }
 
@@ -410,177 +366,165 @@ void sure::SURE_Estimator<PointT>::calculateNormals(unsigned int level, float ra
  * @return true, if the calculation is succesful
  */
 template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const Eigen::Vector3f& pos)
+bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeNode* node, float radius, int count)
 {
-  if( count >= sure::MINIMUM_POINTS_FOR_NORMAL )
+  if( count < 0 )
   {
-
-    Eigen::Matrix3f summedSquares;
-    Eigen::Vector3f summedPosition;
-
-    summedSquares(0, 0) = value.summedSquares[0] * (1.f / (float) count);
-    summedSquares(0, 1) = value.summedSquares[1] * (1.f / (float) count);
-    summedSquares(0, 2) = value.summedSquares[2] * (1.f / (float) count);
-    summedSquares(1, 0) = value.summedSquares[3] * (1.f / (float) count);
-    summedSquares(1, 1) = value.summedSquares[4] * (1.f / (float) count);
-    summedSquares(1, 2) = value.summedSquares[5] * (1.f / (float) count);
-    summedSquares(2, 0) = value.summedSquares[6] * (1.f / (float) count);
-    summedSquares(2, 1) = value.summedSquares[7] * (1.f / (float) count);
-    summedSquares(2, 2) = value.summedSquares[8] * (1.f / (float) count);
-
-    summedPosition(0) = value.summedPos[0] * (1.f / (float) count);
-    summedPosition(1) = value.summedPos[1] * (1.f / (float) count);
-    summedPosition(2) = value.summedPos[2] * (1.f / (float) count);
-
-    summedSquares -= summedPosition * summedPosition.transpose();
-//    summedSquares *= 1.f / (float) count;
-
-    if( !sure::is_finite(summedSquares) )
-    {
-      return false;
-    }
-
-    Eigen::Matrix3f eigenVectors;
-    Eigen::Vector3f eigenValues;
-    pcl::eigen33(summedSquares, eigenVectors, eigenValues);
-
-    if( std::isfinite(eigenVectors.col(0)[0]) && std::isfinite(eigenVectors.col(0)[1]) && std::isfinite(eigenVectors.col(0)[2]) )
-    {
-      Eigen::Vector3f orientationVec = Eigen::Vector3f(input_->sensor_origin_[0], input_->sensor_origin_[1], input_->sensor_origin_[2])-pos;
-      Eigen::Vector3f tempNormal(eigenVectors.col(0)[0], eigenVectors.col(0)[1], eigenVectors.col(0)[2]);
-      sure::orientateNormal(tempNormal, orientationVec);
-      normal[0] = tempNormal[0];
-      normal[1] = tempNormal[1];
-      normal[2] = tempNormal[2];
-      value.statusOfNormal = sure::OctreeValue::NORMAL_STABLE;
-      value.eigenValues[0] = eigenValues[0];
-      value.eigenValues[1] = eigenValues[1];
-      value.eigenValues[2] = eigenValues[2];
-      value.eigenVectors[0] = eigenVectors.col(0)[0];
-      value.eigenVectors[1] = eigenVectors.col(0)[1];
-      value.eigenVectors[2] = eigenVectors.col(0)[2];
-      value.eigenVectors[3] = eigenVectors.col(1)[0];
-      value.eigenVectors[4] = eigenVectors.col(1)[1];
-      value.eigenVectors[5] = eigenVectors.col(1)[2];
-      value.eigenVectors[6] = eigenVectors.col(2)[0];
-      value.eigenVectors[7] = eigenVectors.col(2)[1];
-      value.eigenVectors[8] = eigenVectors.col(2)[2];
-      return true;
-    }
-    else
-    {
-      normal[0] = normal[1] = normal[2] = 0.f;
-    }
+    count = node->numPoints;
   }
-  return false;
-}
 
-template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, const unsigned int count, float normal[3], const OctreePosition& pos)
-{
-  Eigen::Vector3f position = Eigen::Vector3f(pos.p[0], pos.p[1], pos.p[2]);
-  return calculateNormal(value, count, normal, position);
-}
-
-/**
- * Calculates a normal with the values of a given octree node
- * @param node
- */
-template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(OctreeNode* node)
-{
-  return calculateNormal(node->value, node->numPoints, node->value.normal, node->closestPosition);
-}
-
-/**
- * Calculates a normal on a given node with a given radius
- * @param node
- * @param radius
- * @param minResolution
- */
-template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(OctreeNode* node, float radius)
-{
-  OctreePosition minPosition, maxPosition;
-
-  minPosition.p[0] = node->closestPosition.p[0] - radius;
-  minPosition.p[1] = node->closestPosition.p[1] - radius;
-  minPosition.p[2] = node->closestPosition.p[2] - radius;
-
-  maxPosition.p[0] = node->closestPosition.p[0] + radius;
-  maxPosition.p[1] = node->closestPosition.p[1] + radius;
-  maxPosition.p[2] = node->closestPosition.p[2] + radius;
-
-  sure::OctreeValue value;
-  unsigned int count = 0;
-  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
-
-  if( calculateNormal(value, count, node->value.normal, node->closestPosition) )
+  if( count < sure::MINIMUM_POINTS_FOR_NORMAL )
   {
-    node->value.statusOfNormal = value.statusOfNormal;
+    node->value.statusOfNormal = sure::OctreeValue::NORMAL_UNSTABLE;
+    return false;
+  }
+
+  Eigen::Matrix3f summedSquares;
+  Eigen::Vector3f summedPosition;
+
+
+  if( radius > node->maxPosition.p[0] - node->position.p[0] )
+  {
+    OctreePosition minPosition, maxPosition;
+    sure::OctreeValue tempValue;
+
+    minPosition.p[0] = node->closestPosition.p[0] - radius;
+    minPosition.p[1] = node->closestPosition.p[1] - radius;
+    minPosition.p[2] = node->closestPosition.p[2] - radius;
+
+    maxPosition.p[0] = node->closestPosition.p[0] + radius;
+    maxPosition.p[1] = node->closestPosition.p[1] + radius;
+    maxPosition.p[2] = node->closestPosition.p[2] + radius;
+
+    unsigned int count = 0;
+    octree->getValueAndCountInVolume(tempValue, count, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
+
+    summedSquares(0, 0) = tempValue.summedSquares[0] * (1.f / (float) count);
+    summedSquares(0, 1) = tempValue.summedSquares[1] * (1.f / (float) count);
+    summedSquares(0, 2) = tempValue.summedSquares[2] * (1.f / (float) count);
+    summedSquares(1, 0) = tempValue.summedSquares[3] * (1.f / (float) count);
+    summedSquares(1, 1) = tempValue.summedSquares[4] * (1.f / (float) count);
+    summedSquares(1, 2) = tempValue.summedSquares[5] * (1.f / (float) count);
+    summedSquares(2, 0) = tempValue.summedSquares[6] * (1.f / (float) count);
+    summedSquares(2, 1) = tempValue.summedSquares[7] * (1.f / (float) count);
+    summedSquares(2, 2) = tempValue.summedSquares[8] * (1.f / (float) count);
+
+    summedPosition(0) = tempValue.summedPos[0] * (1.f / (float) count);
+    summedPosition(1) = tempValue.summedPos[1] * (1.f / (float) count);
+    summedPosition(2) = tempValue.summedPos[2] * (1.f / (float) count);
+  }
+  else
+  {
+    summedSquares(0, 0) = node->value.summedSquares[0] * (1.f / (float) count);
+    summedSquares(0, 1) = node->value.summedSquares[1] * (1.f / (float) count);
+    summedSquares(0, 2) = node->value.summedSquares[2] * (1.f / (float) count);
+    summedSquares(1, 0) = node->value.summedSquares[3] * (1.f / (float) count);
+    summedSquares(1, 1) = node->value.summedSquares[4] * (1.f / (float) count);
+    summedSquares(1, 2) = node->value.summedSquares[5] * (1.f / (float) count);
+    summedSquares(2, 0) = node->value.summedSquares[6] * (1.f / (float) count);
+    summedSquares(2, 1) = node->value.summedSquares[7] * (1.f / (float) count);
+    summedSquares(2, 2) = node->value.summedSquares[8] * (1.f / (float) count);
+
+    summedPosition(0) = node->value.summedPos[0] * (1.f / (float) count);
+    summedPosition(1) = node->value.summedPos[1] * (1.f / (float) count);
+    summedPosition(2) = node->value.summedPos[2] * (1.f / (float) count);
+  }
+
+  summedSquares -= summedPosition * summedPosition.transpose();
+
+  if( !sure::is_finite(summedSquares) )
+  {
+    return false;
+  }
+
+  Eigen::Matrix3f eigenVectors;
+  Eigen::Vector3f eigenValues;
+  pcl::eigen33(summedSquares, eigenVectors, eigenValues);
+
+  if( std::isfinite(eigenVectors.col(0)[0]) && std::isfinite(eigenVectors.col(0)[1]) && std::isfinite(eigenVectors.col(0)[2]) )
+  {
+    node->value.statusOfNormal = sure::OctreeValue::NORMAL_STABLE;
+    node->value.eigenValues[0] = eigenValues[0];
+    node->value.eigenValues[1] = eigenValues[1];
+    node->value.eigenValues[2] = eigenValues[2];
+    node->value.normal[0] = node->value.eigenVectors[0] = eigenVectors.col(0)[0];
+    node->value.normal[1] = node->value.eigenVectors[1] = eigenVectors.col(0)[1];
+    node->value.normal[2] = node->value.eigenVectors[2] = eigenVectors.col(0)[2];
+    node->value.eigenVectors[3] = eigenVectors.col(1)[0];
+    node->value.eigenVectors[4] = eigenVectors.col(1)[1];
+    node->value.eigenVectors[5] = eigenVectors.col(1)[2];
+    node->value.eigenVectors[6] = eigenVectors.col(2)[0];
+    node->value.eigenVectors[7] = eigenVectors.col(2)[1];
+    node->value.eigenVectors[8] = eigenVectors.col(2)[2];
+    node->value.test[0] = eigenValues[0] / (eigenValues[0]+eigenValues[1]+eigenValues[2]);
     return true;
   }
-  node->value.statusOfNormal = sure::OctreeValue::NORMAL_UNSTABLE;
+  else
+  {
+    node->value.normal[0] = node->value.normal[1] = node->value.normal[2] = 0.f;
+    node->value.statusOfNormal = sure::OctreeValue::NORMAL_UNSTABLE;
+  }
   return false;
-}
-
-/**
- * Calculates a normal on a given position with a given radius
- * @param position
- * @param radius
- * @param normal
- * @param minResolution
- * @return
- */
-template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(const OctreePosition& position, float radius, float normal[3])
-{
-  OctreePosition minPosition, maxPosition;
-  Eigen::Vector3f posVec = Eigen::Vector3f(position.p[0], position.p[1], position.p[2]);
-
-  minPosition.p[0] = position.p[0] - radius;
-  minPosition.p[1] = position.p[1] - radius;
-  minPosition.p[2] = position.p[2] - radius;
-
-  maxPosition.p[0] = position.p[0] + radius;
-  maxPosition.p[1] = position.p[1] + radius;
-  maxPosition.p[2] = position.p[2] + radius;
-
-  sure::OctreeValue value(0);
-  value.statusOfMaximum = sure::OctreeValue::ARTIFICIAL;
-  unsigned int count = 0;
-  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
-
-  return calculateNormal(value, count, normal, posVec);
 }
 
 template <typename PointT>
 bool sure::SURE_Estimator<PointT>::calculateNormal(const Eigen::Vector3f& position, float radius, Eigen::Vector3f& normal)
 {
-  OctreePosition minPosition, maxPosition;
+  sure::OctreeNode node;
 
-  minPosition.p[0] = position[0] - radius;
-  minPosition.p[1] = position[1] - radius;
-  minPosition.p[2] = position[2] - radius;
+  node.minPosition.p[0] = position[0] - radius;
+  node.minPosition.p[1] = position[1] - radius;
+  node.minPosition.p[2] = position[2] - radius;
 
-  maxPosition.p[0] = position[0] + radius;
-  maxPosition.p[1] = position[1] + radius;
-  maxPosition.p[2] = position[2] + radius;
+  node.maxPosition.p[0] = position[0] + radius;
+  node.maxPosition.p[1] = position[1] + radius;
+  node.maxPosition.p[2] = position[2] + radius;
 
-  sure::OctreeValue value;
-  value.statusOfMaximum = sure::OctreeValue::ARTIFICIAL;
-  unsigned int count(0);
-  octree->getValueAndCountInVolume(value, count, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
+  node.value.statusOfMaximum = sure::OctreeValue::ARTIFICIAL;
+  octree->getValueAndCountInVolume(node.value, node.numPoints, node.minPosition, node.maxPosition, config.getOctreeMinimumVolumeSize());
 
-  if( calculateNormal(value, count, value.normal, position) )
+  if( calculateNormal(&node) )
   {
-    normal = Eigen::Vector3f(value.normal[0], value.normal[1], value.normal[2]);
+    normal = Eigen::Vector3f(node.value.normal[0], node.value.normal[1], node.value.normal[2]);
     return true;
   }
   else
   {
     normal = Eigen::Vector3f::Zero();
-    return false;
+  }
+  return false;
+}
+
+template <typename PointT>
+void sure::SURE_Estimator<PointT>::orientateNormal(Eigen::Vector3f& normal, const Eigen::Vector3f& position)
+{
+  Eigen::Vector3f viewVector(input_->sensor_origin_[0]-position[0], input_->sensor_origin_[1]-position[1], input_->sensor_origin_[2]-position[2]);
+  if( normal.dot(viewVector) < 0.f )
+  {
+    normal = -normal;
+  }
+}
+
+template <typename PointT>
+void sure::SURE_Estimator<PointT>::orientateNormal(Eigen::Vector3f& normal, const OctreePosition& position)
+{
+  Eigen::Vector3f viewVector(input_->sensor_origin_[0]-position.p[0], input_->sensor_origin_[1]-position.p[1], input_->sensor_origin_[2]-position.p[2]);
+  if( normal.dot(viewVector) < 0.f )
+  {
+    normal = -normal;
+  }
+}
+
+template <typename PointT>
+void sure::SURE_Estimator<PointT>::orientateNormal(float& normal1, float& normal2, float& normal3, const OctreePosition& position)
+{
+  Eigen::Vector3f normal(normal1, normal2, normal3);
+  Eigen::Vector3f viewVector(input_->sensor_origin_[0]-position.p[0], input_->sensor_origin_[1]-position.p[1], input_->sensor_origin_[2]-position.p[2]);
+  if( normal.dot(viewVector) < 0.f )
+  {
+    normal1 = -normal1;
+    normal2 = -normal2;
+    normal3 = -normal3;
   }
 }
 
@@ -980,7 +924,10 @@ void sure::SURE_Estimator<PointT>::createDescriptor(sure::Feature& feature)
   OctreePosition minPosition, maxPosition;
 
   Eigen::Vector3f normal(Eigen::Vector3f::Zero());
+
   calculateNormal(feature.position(), config.histogramRadius, normal);
+  orientateNormal(normal, feature.position());
+
   feature.setNormal(normal);
 
   minPosition.p[0] = feature.position()[0] - config.histogramRadius;
