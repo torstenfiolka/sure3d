@@ -37,16 +37,16 @@
 void sure::calculateSurfletPairRelations(const sure::Surflet& reference, const sure::Surflet& neighbour, double& alpha, double& phi, double& theta)
 {
   Eigen::Vector3d u, v, w, p2p1;
-  p2p1 = Eigen::Vector3d(neighbour.point[0] - reference.point[0], neighbour.point[1] - reference.point[1], neighbour.point[2] - reference.point[2]);
-  u = Eigen::Vector3d(reference.normal[0], reference.normal[1], reference.normal[2]);
+  p2p1 = Eigen::Vector3d(neighbour.position()[0] - reference.position()[0], neighbour.position()[1] - reference.position()[1], neighbour.position()[2] - reference.position()[2]);
+  u = Eigen::Vector3d(reference.normal()[0], reference.normal()[1], reference.normal()[2]);
   u.normalize();
   v = u.cross(p2p1);
   v.normalize();
   w = v.cross(u);
   w.normalize();
-  alpha = (double) v.dot(Eigen::Vector3d(neighbour.normal[0], neighbour.normal[1], neighbour.normal[2]));
+  alpha = (double) v.dot(Eigen::Vector3d(neighbour.normal()[0], neighbour.normal()[1], neighbour.normal()[2]));
   phi = (double) (u.dot(p2p1))/p2p1.norm();
-  theta = (double) atan2(w.dot(Eigen::Vector3d(neighbour.normal[0], neighbour.normal[1], neighbour.normal[2])), u.dot(Eigen::Vector3d(neighbour.normal[0], neighbour.normal[1], neighbour.normal[2])));
+  theta = (double) atan2(w.dot(Eigen::Vector3d(neighbour.normal()[0], neighbour.normal()[1], neighbour.normal()[2])), u.dot(Eigen::Vector3d(neighbour.normal()[0], neighbour.normal()[1], neighbour.normal()[2])));
 }
 
 //std::ostream& sure::operator<<(std::ostream& stream, const sure::Surflet& rhs)

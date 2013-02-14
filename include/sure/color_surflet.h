@@ -51,84 +51,52 @@ public:
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  float r, g, b;
 
-  ColorSurflet()
+  ColorSurflet() : mRed(0.f), mGreen(0.f), mBlue(0.f) { }
+  ColorSurflet(const Eigen::Vector3f pos) : sure::Surflet(pos), mRed(0.f), mGreen(0.f), mBlue(0.f) { }
+  ColorSurflet(const Eigen::Vector3f pos, const Eigen::Vector3f normal) : sure::Surflet(pos, normal), mRed(0.f), mGreen(0.f), mBlue(0.f) { }
+  ColorSurflet(const Eigen::Vector3f pos, const Eigen::Vector3f normal, float pclRGB) : sure::Surflet(pos, normal), mRed(0.f), mGreen(0.f), mBlue(0.f)
   {
-    this->initialize();
+    sure::convertPCLRGBtoFloatRGB(pclRGB, mRed, mGreen, mBlue);
   }
-
-  ColorSurflet(const Eigen::Vector3f pos) : sure::Surflet(pos)
-  {
-    this->initialize();
-  }
-
-  ColorSurflet(const Eigen::Vector3f pos, const Eigen::Vector3f normal) : sure::Surflet(pos, normal)
-  {
-    this->initialize();
-  }
-
-  ColorSurflet(const Eigen::Vector3f pos, const Eigen::Vector3f normal, float pclRGB)
-  {
-    sure::convertPCLRGBtoFloatRGB(pclRGB, r, g, b);
-    this->point = pos;
-    this->normal = normal;
-  }
-
-  ColorSurflet(const Eigen::Vector3f pos, const Eigen::Vector3f normal, float r, float g, float b)
-  {
-    this->r = r;
-    this->g = g;
-    this->b = b;
-    this->point = pos;
-    this->normal = normal;
-  }
-
-  ColorSurflet(const sure::Surflet& surflet) : sure::Surflet(surflet)
-  {
-    this->initialize();
-  }
-
-  ColorSurflet(const sure::Surflet& surflet, float r, float g, float b) : sure::Surflet(surflet)
-  {
-    this->r = r;
-    this->g = g;
-    this->b = b;
-  }
-
+  ColorSurflet(const Eigen::Vector3f pos, const Eigen::Vector3f normal, float r, float g, float b) : sure::Surflet(pos, normal), mRed(r), mGreen(g), mBlue(b) { }
+  ColorSurflet(const sure::Surflet& surflet) : sure::Surflet(surflet), mRed(0.f), mGreen(0.f), mBlue(0.f) { }
+  ColorSurflet(const sure::Surflet& surflet, float r, float g, float b) : sure::Surflet(surflet), mRed(r), mGreen(g), mBlue(b) { }
 
   virtual void reset()
   {
     sure::Surflet::reset();
-    this->initialize();
-  }
-
-  virtual void initialize()
-  {
-    r = g = b = INFINITY;
+    mRed = mGreen = mBlue = 0.f;
   }
 
   virtual void print() const
   {
     sure::Surflet::print();
-    std::cout << std::fixed << std::setprecision(3) << "[ColorSurflet] RGB: " << r << " / " << g << " / " << b << std::endl;
+    std::cout << std::fixed << std::setprecision(3) << "[ColorSurflet] RGB: " << mRed << " / " << mGreen << " / " << mBlue << std::endl;
   }
 
   virtual ~ColorSurflet() { }
 
   void setColor(float pclRGB)
   {
-    sure::convertPCLRGBtoFloatRGB(pclRGB, r, g, b);
+    sure::convertPCLRGBtoFloatRGB(pclRGB, mRed, mGreen, mBlue);
   }
-
   void setColor(float r, float g, float b)
   {
-    this->r = r;
-    this->g = g;
-    this->b = b;
+    this->mRed = r;
+    this->mGreen = g;
+    this->mBlue = b;
   }
 
-//  friend std::ostream& operator<<(std::ostream& stream, const sure::ColorSurflet& rhs);
+  float r() const { return mRed; }
+  float g() const { return mGreen; }
+  float b() const { return mBlue; }
+
+  //  friend std::ostream& operator<<(std::ostream& stream, const sure::ColorSurflet& rhs);
+
+protected:
+
+  float mRed, mGreen, mBlue;
 
 private:
 

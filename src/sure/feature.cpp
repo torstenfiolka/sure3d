@@ -36,7 +36,7 @@
 sure::Feature sure::Feature::operator +(const sure::Feature& rhs) const
 {
   sure::Feature lhs(*this);
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     lhs.pfDescriptor[i] += rhs.pfDescriptor[i];
     lhs.colorDescriptor[i] += rhs.colorDescriptor[i];
@@ -47,7 +47,7 @@ sure::Feature sure::Feature::operator +(const sure::Feature& rhs) const
 
 sure::Feature& sure::Feature::operator +=(const sure::Feature& rhs)
 {
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     this->pfDescriptor[i] += rhs.pfDescriptor[i];
     this->colorDescriptor[i] += rhs.colorDescriptor[i];
@@ -59,7 +59,7 @@ sure::Feature& sure::Feature::operator +=(const sure::Feature& rhs)
 sure::Feature sure::Feature::operator *(const double rhs) const
 {
   sure::Feature lhs(*this);
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     lhs.pfDescriptor[i] *= rhs;
     lhs.colorDescriptor[i] *= rhs;
@@ -70,7 +70,7 @@ sure::Feature sure::Feature::operator *(const double rhs) const
 
 sure::Feature& sure::Feature::operator *=(const double rhs)
 {
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     this->pfDescriptor[i] *= rhs;
     this->colorDescriptor[i] *= rhs;
@@ -82,7 +82,7 @@ sure::Feature& sure::Feature::operator *=(const double rhs)
 sure::Feature sure::Feature::operator /(const double rhs) const
 {
   sure::Feature lhs(*this);
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     lhs.pfDescriptor[i] /= rhs;
     lhs.colorDescriptor[i] /= rhs;
@@ -93,7 +93,7 @@ sure::Feature sure::Feature::operator /(const double rhs) const
 
 sure::Feature& sure::Feature::operator /=(const double rhs)
 {
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     this->pfDescriptor[i] /= rhs;
     this->colorDescriptor[i] /= rhs;
@@ -102,49 +102,34 @@ sure::Feature& sure::Feature::operator /=(const double rhs)
   return *this;
 }
 
-
 void sure::Feature::reset()
 {
   sure::ColorSurflet::reset();
-  initialize();
-}
-
-void sure::Feature::initialize()
-{
-  pfDescriptor.clear();
-  colorDescriptor.clear();
-  lightnessDescriptor.clear();
-  pfDescriptor.resize(descriptorCount);
-  colorDescriptor.resize(descriptorCount);
-  lightnessDescriptor.resize(descriptorCount);
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     pfDescriptor[i].clear();
     colorDescriptor[i].clear();
     lightnessDescriptor[i].clear();
   }
-  entropy = 0.f;
-  radius = 0.f;
-  pointCloudIndex = -1;
-  cornerness3D = 0.f;
 }
 
 void sure::Feature::print() const
 {
   sure::ColorSurflet::print();
-  std::cout << std::fixed << std::setprecision(3) << "[Feature] Entropy: " << entropy << " Radius: " << radius << " PointCloud Index: " << pointCloudIndex << std::endl;
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  std::cout << std::fixed << std::setprecision(3) << "[Feature] Entropy: " << mEntropy << " Radius: " << mRadius << " PointCloud Index: " << mPointCloudIndex << std::endl;
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     pfDescriptor[i].print();
     colorDescriptor[i].print();
     lightnessDescriptor[i].print();
   }
+  std::cout << "\n";
 }
 
 bool sure::Feature::hasNormalizedDescriptors() const
 {
   bool normalized = true;
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     normalized = normalized && pfDescriptor[i].isNormalized() && colorDescriptor[i].isNormalized() && lightnessDescriptor[i].isNormalized();
   }
@@ -153,16 +138,16 @@ bool sure::Feature::hasNormalizedDescriptors() const
 
 double sure::Feature::distanceTo(const sure::Feature& rhs, double shapeWeight, double colorWeight, double lightnessWeight) const
 {
-  if( this->hasNormalizedDescriptors() && rhs.hasNormalizedDescriptors() && this->descriptorCount == rhs.descriptorCount )
+  if( this->hasNormalizedDescriptors() && rhs.hasNormalizedDescriptors() && this->numberOfDescriptors == rhs.numberOfDescriptors )
   {
     double distance = 0.0;
-    for(unsigned int i=0; i<descriptorCount; ++i)
+    for(unsigned int i=0; i<numberOfDescriptors; ++i)
     {
       distance += pfDescriptor[i].distanceTo(rhs.pfDescriptor[i]) * shapeWeight;
       distance += colorDescriptor[i].distanceTo(rhs.colorDescriptor[i]) * colorWeight;
       distance += lightnessDescriptor[i].distanceTo(rhs.lightnessDescriptor[i]) * lightnessWeight;
     }
-    return distance / ((shapeWeight+colorWeight+lightnessWeight) * (double) descriptorCount);
+    return distance / ((shapeWeight+colorWeight+lightnessWeight) * (double) numberOfDescriptors);
   }
   return INFINITY;
 }
@@ -175,10 +160,10 @@ double sure::Feature::distanceTo(const sure::Feature& rhs) const
 int sure::Feature::determineDistanceClass(const sure::Surflet& surflet)
 {
   int dClass = 0;
-  if( this->descriptorCount > 1 )
+  if( this->numberOfDescriptors > 1 )
   {
-    float distance = fabsf(surflet.point[0] - this->point[0]) + fabsf(surflet.point[1] - this->point[1]) + fabsf(surflet.point[2] - this->point[2]);
-    float classSize = (3.f * this->radius) / float(this->descriptorCount);
+    float distance = fabsf(surflet.position()[0] - this->position()[0]) + fabsf(surflet.position()[1] - this->position()[1]) + fabsf(surflet.position()[2] - this->position()[2]);
+    float classSize = (3.f * this->mRadius) / float(this->numberOfDescriptors);
     dClass = floor(distance / classSize);
   }
   return dClass;
@@ -190,19 +175,19 @@ void sure::Feature::calculateDescriptor(const std::vector<sure::ColorSurflet>& s
   double hue = 0.0, saturation = 0.0, lightness = 0.0;
   unsigned int distanceClass = 0;
 
-  sure::convertRGBtoHSL(r, g, b, hue, saturation, lightness);
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  sure::convertRGBtoHSL(mRed, mGreen, mBlue, hue, saturation, lightness);
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     lightnessDescriptor[i].setLightness(lightness);
   }
 
   for(unsigned int i=0; i<surflets.size(); ++i)
   {
-    sure::convertRGBtoHSL(surflets[i].r, surflets[i].g, surflets[i].b, hue, saturation, lightness);
+    sure::convertRGBtoHSL(surflets[i].r(), surflets[i].g(), surflets[i].b(), hue, saturation, lightness);
     sure::calculateSurfletPairRelations(*this, surflets[i], alpha, phi, theta);
     distanceClass = determineDistanceClass(surflets[i]);
 
-    if( isinf(alpha) || isinf(phi) || isinf(theta) || isnan(alpha) || isnan(phi) || isnan(theta) || distanceClass >= descriptorCount )
+    if( isinf(alpha) || isinf(phi) || isinf(theta) || isnan(alpha) || isnan(phi) || isnan(theta) || distanceClass >= numberOfDescriptors )
     {
       continue;
     }
@@ -213,7 +198,7 @@ void sure::Feature::calculateDescriptor(const std::vector<sure::ColorSurflet>& s
   }
   if( normalize )
   {
-    for(unsigned int i=0; i<descriptorCount; ++i)
+    for(unsigned int i=0; i<numberOfDescriptors; ++i)
     {
       pfDescriptor[i].normalize();
       colorDescriptor[i].normalize();
@@ -228,8 +213,8 @@ void sure::Feature::calculateDescriptor(const std::vector<OctreeNode* >& nodes, 
   double hue = 0.0, saturation = 0.0, lightness = 0.0;
   unsigned int distanceClass = 0;
 
-  sure::convertRGBtoHSL(r, g, b, hue, saturation, lightness);
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  sure::convertRGBtoHSL(mRed, mGreen, mBlue, hue, saturation, lightness);
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     lightnessDescriptor[i].setLightness(lightness);
   }
@@ -243,13 +228,13 @@ void sure::Feature::calculateDescriptor(const std::vector<OctreeNode* >& nodes, 
     sure::convertRGBtoHSL(nodes[i]->value.r(), nodes[i]->value.g(), nodes[i]->value.b(), hue, saturation, lightness);
 
     sure::Surflet surflet;
-    surflet.point = Eigen::Vector3f(nodes[i]->closestPosition.p[0], nodes[i]->closestPosition.p[1], nodes[i]->closestPosition.p[2]);
-    surflet.normal = Eigen::Vector3f(nodes[i]->value.normal[0], nodes[i]->value.normal[1], nodes[i]->value.normal[2]);
+    surflet.setPosition(nodes[i]->closestPosition.p[0], nodes[i]->closestPosition.p[1], nodes[i]->closestPosition.p[2]);
+    surflet.setNormal(nodes[i]->value.normal[0], nodes[i]->value.normal[1], nodes[i]->value.normal[2]);
 
     sure::calculateSurfletPairRelations(*this, surflet, alpha, phi, theta);
     distanceClass = determineDistanceClass(surflet);
 
-    if( isinf(alpha) || isinf(phi) || isinf(theta) || isnan(alpha) || isnan(phi) || isnan(theta) || distanceClass >= descriptorCount )
+    if( isinf(alpha) || isinf(phi) || isinf(theta) || isnan(alpha) || isnan(phi) || isnan(theta) || distanceClass >= numberOfDescriptors )
     {
       continue;
     }
@@ -260,7 +245,7 @@ void sure::Feature::calculateDescriptor(const std::vector<OctreeNode* >& nodes, 
   }
   if( normalize )
   {
-    for(unsigned int i=0; i<descriptorCount; ++i)
+    for(unsigned int i=0; i<numberOfDescriptors; ++i)
     {
       pfDescriptor[i].normalize();
       colorDescriptor[i].normalize();
@@ -272,7 +257,7 @@ void sure::Feature::calculateDescriptor(const std::vector<OctreeNode* >& nodes, 
 
 void sure::Feature::createRandomDescriptor()
 {
-  for(unsigned int i=0; i<descriptorCount; ++i)
+  for(unsigned int i=0; i<numberOfDescriptors; ++i)
   {
     pfDescriptor[i].fillRandom();
     colorDescriptor[i].fillRandom();

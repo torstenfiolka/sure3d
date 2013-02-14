@@ -67,40 +67,40 @@ namespace sure {
       clear();
     }
 
-    OctreeValue(const OctreeValue& rhs) : normalHistogram()
-    {
-      if( this != &rhs )
-      {
-    	this->normalHistogram = sure::NormalHistogram(rhs.normalHistogram);
-        this->colorR = rhs.colorR;
-        this->colorG = rhs.colorG;
-        this->colorB = rhs.colorB;
-        this->cornerness3D = rhs.cornerness3D;
-        this->entropy = rhs.entropy;
-        this->density = rhs.density;
-        this->scale = rhs.scale;
-        this->normalHistogram = rhs.normalHistogram;
-        this->numberOfPoints = rhs.numberOfPoints;
-        this->pointCloudIndex = rhs.pointCloudIndex;
-        this->statusOfMaximum = rhs.statusOfMaximum;
-        this->statusOfNormal = rhs.statusOfNormal;
-        for(int i=0; i<3; ++i)
-        {
-          this->normal[i] = rhs.normal[i];
-          this->summedPos[i] = rhs.summedPos[i];
-          this->summedSquares[i] = rhs.summedSquares[i];
-        }
-        for(int i=3; i<9; ++i)
-        {
-          this->summedSquares[i] = rhs.summedSquares[i];
-        }
-
-        for(int i=0; i<5; ++i)
-        {
-          test[i] = rhs.test[i];
-        }
-      }
-    }
+//    OctreeValue(const OctreeValue& rhs) : normalHistogram()
+//    {
+//      if( this != &rhs )
+//      {
+//    	this->normalHistogram = sure::NormalHistogram(rhs.normalHistogram);
+//        this->colorR = rhs.colorR;
+//        this->colorG = rhs.colorG;
+//        this->colorB = rhs.colorB;
+//        this->cornerness3D = rhs.cornerness3D;
+//        this->entropy = rhs.entropy;
+//        this->density = rhs.density;
+//        this->scale = rhs.scale;
+//        this->normalHistogram = rhs.normalHistogram;
+//        this->numberOfPoints = rhs.numberOfPoints;
+//        this->pointCloudIndex = rhs.pointCloudIndex;
+//        this->statusOfMaximum = rhs.statusOfMaximum;
+//        this->statusOfNormal = rhs.statusOfNormal;
+//        for(int i=0; i<3; ++i)
+//        {
+//          this->normal[i] = rhs.normal[i];
+//          this->summedPos[i] = rhs.summedPos[i];
+//          this->summedSquares[i] = rhs.summedSquares[i];
+//        }
+//        for(int i=3; i<9; ++i)
+//        {
+//          this->summedSquares[i] = rhs.summedSquares[i];
+//        }
+//
+//        for(int i=0; i<5; ++i)
+//        {
+//          test[i] = rhs.test[i];
+//        }
+//      }
+//    }
 
     ~OctreeValue()
     {
@@ -108,7 +108,7 @@ namespace sure {
 
     void clear();
 
-    const sure::OctreeValue& operator=(const sure::OctreeValue& rhs);
+//    const sure::OctreeValue& operator=(const sure::OctreeValue& rhs);
     sure::OctreeValue operator+(const sure::OctreeValue& rhs) const;
     sure::OctreeValue& operator+=(const sure::OctreeValue& rhs);
 
@@ -135,6 +135,8 @@ namespace sure {
     float scale;
 
     float normal[3];
+    float eigenVectors[9];
+    float eigenValues[3];
     float test[5];
 
     sure::OctreeValue::NormalStatus statusOfNormal;
