@@ -54,55 +54,52 @@ public:
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  Eigen::Vector3f normal;
-  Eigen::Vector3f point;
+  Surflet() : mNormal(Eigen::Vector3f::Zero()), mPosition(Eigen::Vector3f::Zero()) {  }
 
-  Surflet()
-  {
-    this->reset();
-  }
+  Surflet(const Eigen::Vector3f pos) : mNormal(Eigen::Vector3f::Zero()), mPosition(pos) {  }
 
-  Surflet(const Eigen::Vector3f pos)
-  {
-    this->reset();
-    this->point = pos;
-  }
-
-  Surflet(const Eigen::Vector3f pos, const Eigen::Vector3f normal)
-  {
-    this->point = pos;
-    this->normal = normal;
-  }
+  Surflet(const Eigen::Vector3f pos, const Eigen::Vector3f mNormal) : mNormal(mNormal), mPosition(pos) { }
 
   virtual void reset()
   {
-    normal = Eigen::Vector3f::Zero();
-    point = Eigen::Vector3f::Zero();
+    mNormal = Eigen::Vector3f::Zero();
+    mPosition = Eigen::Vector3f::Zero();
   }
 
   virtual void print() const
   {
-    std::cout << std::fixed << std::setprecision(3) << "[Surflet] Position: " << point[0] << " / " << point[1] << " / " << point[2] << std::endl;
-    std::cout << std::fixed << std::setprecision(3) << "[Surflet] Normal: " << normal[0] << " / " << normal[1] << " / " << normal[2] << std::endl;
+    std::cout << std::fixed << std::setprecision(3) << "[Surflet] Position: " << mPosition[0] << " / " << mPosition[1] << " / " << mPosition[2] << std::endl;
+    std::cout << std::fixed << std::setprecision(3) << "[Surflet] Normal: " << mNormal[0] << " / " << mNormal[1] << " / " << mNormal[2] << std::endl;
   }
+
+  void setNormal(const Eigen::Vector3f& normal) { mNormal = normal; }
+  void setNormal(float x, float y, float z) { mNormal = Eigen::Vector3f(x,y,z); }
+  void setPosition(const Eigen::Vector3f& pos) { mPosition = pos; }
+  void setPosition(float x, float y, float z) { mPosition = Eigen::Vector3f(x,y,z); }
+
+  const Eigen::Vector3f& position() const { return mPosition; }
+  const Eigen::Vector3f& normal() const { return mNormal; }
 
   virtual ~Surflet()  {  }
 
 //  friend std::ostream& operator<<(std::ostream& stream, const sure::Surflet& rhs);
 
+
 private:
+  Eigen::Vector3f mNormal;
+  Eigen::Vector3f mPosition;
 
   friend class boost::serialization::access;
 
   template<class Archive>
   void serialize(Archive &ar, const unsigned int version)
   {
-    ar & normal[0];
-    ar & normal[1];
-    ar & normal[2];
-    ar & point[0];
-    ar & point[1];
-    ar & point[2];
+    ar & mNormal[0];
+    ar & mNormal[1];
+    ar & mNormal[2];
+    ar & mPosition[0];
+    ar & mPosition[1];
+    ar & mPosition[2];
   }
 
 };

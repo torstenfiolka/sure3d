@@ -181,7 +181,7 @@ namespace sure
 
     protected:
 
-    //! stores the pointcloud
+    //! stores the additional points
     pcl::PointCloud<PointT> addedPoints;
 
     //! the octree and its allocator

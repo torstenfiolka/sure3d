@@ -55,28 +55,25 @@ public:
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  Feature(unsigned int descriptorCount = 1) : descriptorCount(descriptorCount)
-  {
-    sure::ColorSurflet::reset();
-    this->initialize();
-  }
+  Feature(unsigned int descriptorCount = 1)
+  : mEntropy(0.f), mRadius(0.f), mPointCloudIndex(-1), mCornerness3D(0.f),
+    numberOfDescriptors(descriptorCount), pfDescriptor(descriptorCount), colorDescriptor(descriptorCount), lightnessDescriptor(descriptorCount) { }
 
-  Feature(const Eigen::Vector3f& pos, unsigned int descriptorCount = 1) : sure::ColorSurflet(pos), descriptorCount(descriptorCount)
-  {
-    this->initialize();
-  }
-  Feature(const sure::Surflet& rhs, unsigned int descriptorCount = 1) : sure::ColorSurflet(rhs), descriptorCount(descriptorCount)
-  {
-    this->initialize();
-  }
-  Feature(const sure::ColorSurflet& rhs, unsigned int descriptorCount = 1) : sure::ColorSurflet(rhs), descriptorCount(descriptorCount)
-  {
-    this->initialize();
-  }
-  Feature(const Eigen::Vector3f& pos, const Eigen::Vector3f& normal, unsigned int descriptorCount = 1) : sure::ColorSurflet(pos, normal), descriptorCount(descriptorCount)
-  {
-    this->initialize();
-  }
+  Feature(const Eigen::Vector3f& pos, unsigned int descriptorCount = 1)
+  : sure::ColorSurflet(pos), mEntropy(0.f), mRadius(0.f), mPointCloudIndex(-1), mCornerness3D(0.f),
+    numberOfDescriptors(descriptorCount), pfDescriptor(descriptorCount), colorDescriptor(descriptorCount), lightnessDescriptor(descriptorCount) { }
+
+  Feature(const sure::Surflet& rhs, unsigned int descriptorCount = 1)
+  : sure::ColorSurflet(rhs), mEntropy(0.f), mRadius(0.f), mPointCloudIndex(-1), mCornerness3D(0.f),
+    numberOfDescriptors(descriptorCount), pfDescriptor(descriptorCount), colorDescriptor(descriptorCount), lightnessDescriptor(descriptorCount) { }
+
+  Feature(const sure::ColorSurflet& rhs, unsigned int descriptorCount = 1)
+  : sure::ColorSurflet(rhs), mEntropy(0.f), mRadius(0.f), mPointCloudIndex(-1), mCornerness3D(0.f),
+    numberOfDescriptors(descriptorCount), pfDescriptor(descriptorCount), colorDescriptor(descriptorCount), lightnessDescriptor(descriptorCount) { }
+
+  Feature(const Eigen::Vector3f& pos, const Eigen::Vector3f& normal, unsigned int descriptorCount = 1)
+  : sure::ColorSurflet(pos, normal), mEntropy(0.f), mRadius(0.f), mPointCloudIndex(-1), mCornerness3D(0.f),
+    numberOfDescriptors(descriptorCount), pfDescriptor(descriptorCount), colorDescriptor(descriptorCount), lightnessDescriptor(descriptorCount) { }
 
   sure::Feature operator+(const sure::Feature& rhs) const;
   sure::Feature& operator+=(const sure::Feature& rhs);
@@ -85,11 +82,9 @@ public:
   sure::Feature operator /(const double rhs) const;
   sure::Feature& operator /=(const double rhs);
 
-
   ~Feature() {}
 
   virtual void reset();
-  virtual void initialize();
   virtual void print() const;
 
   bool hasNormalizedDescriptors() const;
@@ -103,19 +98,28 @@ public:
 
   void createRandomDescriptor();
 
-  float entropy;
-  float radius;
-  int pointCloudIndex;
-  float cornerness3D;
+  void setRadius(float r) { mRadius = r; }
+  void setEntropy(float e) { mEntropy = e; }
+  void setPointCloudIndex(int i) { mPointCloudIndex = i; }
+  void setCornerness(float c) { mCornerness3D = c; }
+
+  float entropy() const { return mEntropy; }
+  float radius() const { return mRadius; }
+  int getPointCloudIndex() const { return mPointCloudIndex; }
+  float getCornerness() const { return mCornerness3D; }
 
 protected:
+
+  float mEntropy;
+  float mRadius;
+  int mPointCloudIndex;
+  float mCornerness3D;
+
+  unsigned int numberOfDescriptors;
 
   std::vector<sure::PointFeatureDescriptor> pfDescriptor;
   std::vector<sure::HueDescriptor> colorDescriptor;
   std::vector<sure::RelativeLightnessDescriptor> lightnessDescriptor;
-
-  // Todo: Sinnvoller Name
-  unsigned int descriptorCount;
 
 //  friend std::ofstream& operator<<(std::ofstream& stream, const sure::Feature& rhs);
 
@@ -127,12 +131,12 @@ private:
   void serialize(Archive &ar, const unsigned int version)
   {
     ar & boost::serialization::base_object<sure::ColorSurflet>(*this);
-    ar & entropy;
-    ar & radius;
-    ar & pointCloudIndex;
-    ar & cornerness3D;
-    ar & descriptorCount;
-    for(unsigned int i=0; i<descriptorCount; ++i)
+    ar & mEntropy;
+    ar & mRadius;
+    ar & mPointCloudIndex;
+    ar & mCornerness3D;
+    ar & numberOfDescriptors;
+    for(unsigned int i=0; i<numberOfDescriptors; ++i)
     {
       ar & pfDescriptor.at(i);
       ar & colorDescriptor.at(i);

@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2012, Fraunhofer FKIE/US
+// Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
 //
@@ -214,10 +214,10 @@ pcl::PointCloud<pcl::InterestPoint>::Ptr sure::SURE_Estimator<PointT>::getIntere
   for(std::vector<sure::Feature>::const_iterator it=features.begin(); it != features.end(); ++it)
   {
     pcl::InterestPoint p;
-    p.x = (*it).point[0];
-    p.y = (*it).point[1];
-    p.z = (*it).point[2];
-    p.strength = (*it).entropy;
+    p.x = (*it).position()[0];
+    p.y = (*it).position()[1];
+    p.z = (*it).position()[2];
+    p.strength = (*it).entropy();
     interestPoints->points.push_back(p);
   }
   interestPoints->header = input_->header;
@@ -440,19 +440,31 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeValue& value, con
       return false;
     }
 
-    Eigen::Vector3f eigenVector;
-    float eigenValue;
-    pcl::eigen33(summedSquares, eigenValue, eigenVector);
+    Eigen::Matrix3f eigenVectors;
+    Eigen::Vector3f eigenValues;
+    pcl::eigen33(summedSquares, eigenVectors, eigenValues);
 
-    if( std::isfinite(eigenVector[0]) && std::isfinite(eigenVector[1]) && std::isfinite(eigenVector[2]) )
+    if( std::isfinite(eigenVectors.col(0)[0]) && std::isfinite(eigenVectors.col(0)[1]) && std::isfinite(eigenVectors.col(0)[2]) )
     {
-      eigenVector.normalize();
       Eigen::Vector3f orientationVec = Eigen::Vector3f(input_->sensor_origin_[0], input_->sensor_origin_[1], input_->sensor_origin_[2])-pos;
-      sure::orientateNormal(eigenVector, orientationVec);
-      normal[0] = eigenVector[0];
-      normal[1] = eigenVector[1];
-      normal[2] = eigenVector[2];
+      Eigen::Vector3f tempNormal(eigenVectors.col(0)[0], eigenVectors.col(0)[1], eigenVectors.col(0)[2]);
+      sure::orientateNormal(tempNormal, orientationVec);
+      normal[0] = tempNormal[0];
+      normal[1] = tempNormal[1];
+      normal[2] = tempNormal[2];
       value.statusOfNormal = sure::OctreeValue::NORMAL_STABLE;
+      value.eigenValues[0] = eigenValues[0];
+      value.eigenValues[1] = eigenValues[1];
+      value.eigenValues[2] = eigenValues[2];
+      value.eigenVectors[0] = eigenVectors.col(0)[0];
+      value.eigenVectors[1] = eigenVectors.col(0)[1];
+      value.eigenVectors[2] = eigenVectors.col(0)[2];
+      value.eigenVectors[3] = eigenVectors.col(1)[0];
+      value.eigenVectors[4] = eigenVectors.col(1)[1];
+      value.eigenVectors[5] = eigenVectors.col(1)[2];
+      value.eigenVectors[6] = eigenVectors.col(2)[0];
+      value.eigenVectors[7] = eigenVectors.col(2)[1];
+      value.eigenVectors[8] = eigenVectors.col(2)[2];
       return true;
     }
     else
@@ -604,7 +616,7 @@ void sure::SURE_Estimator<PointT>::calculateFeatures()
 //    std::cout << " Localization";
     localizeFeatureWithMeanShift(3);
   }
-  std::cout << std::endl << "Calculated " << this->features.size() << " features."<< std::endl;
+  std::cout << std::endl << "Calculated " << this->features.size() << " features.\n";
 }
 
 //! Calculates entropy for all nodes on the configured depth
@@ -829,7 +841,7 @@ void sure::SURE_Estimator<PointT>::localizeFeatureWithMeanShift(int iterations)
 
   for(unsigned int featureIndex=0; featureIndex<features.size(); ++featureIndex)
   {
-    if( features[featureIndex].radius != config.histogramRadius )
+    if( features[featureIndex].radius() != config.histogramRadius )
     {
       continue;
     }
@@ -842,12 +854,12 @@ void sure::SURE_Estimator<PointT>::localizeFeatureWithMeanShift(int iterations)
       summedShift = 0.f, mean = 0.f, standardDeviation = 0.f, summedMean = 0.f, summedSquares = 0.f, entropyDifference = 0.f;
 
       shiftedPosition.p[0] = shiftedPosition.p[1] = shiftedPosition.p[2] = 0.f;
-      minPosition.p[0] = newFeature.point[0] - searchRadius;
-      minPosition.p[1] = newFeature.point[1] - searchRadius;
-      minPosition.p[2] = newFeature.point[2] - searchRadius;
-      maxPosition.p[0] = newFeature.point[0] + searchRadius;
-      maxPosition.p[1] = newFeature.point[1] + searchRadius;
-      maxPosition.p[2] = newFeature.point[2] + searchRadius;
+      minPosition.p[0] = newFeature.position()[0] - searchRadius;
+      minPosition.p[1] = newFeature.position()[1] - searchRadius;
+      minPosition.p[2] = newFeature.position()[2] - searchRadius;
+      maxPosition.p[0] = newFeature.position()[0] + searchRadius;
+      maxPosition.p[1] = newFeature.position()[1] + searchRadius;
+      maxPosition.p[2] = newFeature.position()[2] + searchRadius;
 
       listOfNodes.clear();
       octree->root->getAllNodesInVolumeOnSamplingDepth(listOfNodes, minPosition, maxPosition, level, false);
@@ -889,9 +901,7 @@ void sure::SURE_Estimator<PointT>::localizeFeatureWithMeanShift(int iterations)
         {
   //        float distance = sqrt((shiftedPosition.p[0] - newFeature.pos.point[0])*(shiftedPosition.p[0] - newFeature.pos.point[0]) + (shiftedPosition.p[1] - newFeature.pos.point[1])*(shiftedPosition.p[1] - newFeature.pos.point[1]) + (shiftedPosition.p[2] - newFeature.pos.point[2])*(shiftedPosition.p[2] - newFeature.pos.point[2]));
   //        ROS_DEBUG_NAMED("octree", "Mean Shift - Iteration: %i\t Distance: %f", iteration, distance);
-          newFeature.point[0] = shiftedPosition.p[0];
-          newFeature.point[1] = shiftedPosition.p[1];
-          newFeature.point[2] = shiftedPosition.p[2];
+          newFeature.setPosition(shiftedPosition.p[0], shiftedPosition.p[1], shiftedPosition.p[2]);
         }
       }
     }
@@ -907,12 +917,10 @@ template <typename PointT>
 sure::Feature sure::SURE_Estimator<PointT>::createFeature(OctreeNode* node)
 {
   sure::Feature newFeature;
-  newFeature.pointCloudIndex = node->value.pointCloudIndex;
-  newFeature.entropy = node->value.entropy;
-  newFeature.point[0] = node->closestPosition.p[0];
-  newFeature.point[1] = node->closestPosition.p[1];
-  newFeature.point[2] = node->closestPosition.p[2];
-  newFeature.radius = config.histogramRadius;
+  newFeature.setPointCloudIndex(node->value.pointCloudIndex);
+  newFeature.setEntropy(node->value.entropy);
+  newFeature.setPosition(node->closestPosition.p[0], node->closestPosition.p[1], node->closestPosition.p[2]);
+  newFeature.setRadius(config.histogramRadius);
   createDescriptor(newFeature);
   return newFeature;
 }
@@ -939,8 +947,8 @@ sure::Feature sure::SURE_Estimator<PointT>::createFeature(const Eigen::Vector3f&
   maxPosition.p[0] = point[0] + config.samplingRate / 2.f;
   maxPosition.p[1] = point[1] + config.samplingRate / 2.f;
   maxPosition.p[2] = point[2] + config.samplingRate / 2.f;
-  nf.point = point;
-  nf.radius = config.histogramRadius;
+  nf.setPosition(point);
+  nf.setRadius(config.histogramRadius);
   createDescriptor(nf);
   return nf;
 }
@@ -959,7 +967,7 @@ sure::Feature sure::SURE_Estimator<PointT>::createFeature(int index)
     pos[2] = input_->points[index].z;
     feature.setColor(input_->points[index].rgb);
     feature = createFeature(pos);
-    feature.pointCloudIndex = index;
+    feature.setPointCloudIndex(index);
   }
   return feature;
 }
@@ -970,13 +978,17 @@ template <typename PointT>
 void sure::SURE_Estimator<PointT>::createDescriptor(sure::Feature& feature)
 {
   OctreePosition minPosition, maxPosition;
-  calculateNormal(feature.point, config.histogramRadius, feature.normal);
-  minPosition.p[0] = feature.point[0] - config.histogramRadius;
-  minPosition.p[1] = feature.point[1] - config.histogramRadius;
-  minPosition.p[2] = feature.point[2] - config.histogramRadius;
-  maxPosition.p[0] = feature.point[0] + config.histogramRadius;
-  maxPosition.p[1] = feature.point[1] + config.histogramRadius;
-  maxPosition.p[2] = feature.point[2] + config.histogramRadius;
+
+  Eigen::Vector3f normal(Eigen::Vector3f::Zero());
+  calculateNormal(feature.position(), config.histogramRadius, normal);
+  feature.setNormal(normal);
+
+  minPosition.p[0] = feature.position()[0] - config.histogramRadius;
+  minPosition.p[1] = feature.position()[1] - config.histogramRadius;
+  minPosition.p[2] = feature.position()[2] - config.histogramRadius;
+  maxPosition.p[0] = feature.position()[0] + config.histogramRadius;
+  maxPosition.p[1] = feature.position()[1] + config.histogramRadius;
+  maxPosition.p[2] = feature.position()[2] + config.histogramRadius;
 
   sure::OctreeValue value = octree->getValueInVolume(minPosition, maxPosition);
   feature.setColor(value.r(), value.g(), value.b());
@@ -986,5 +998,5 @@ void sure::SURE_Estimator<PointT>::createDescriptor(sure::Feature& feature)
   octree->root->getAllNodesInVolumeOnSamplingDepth(nodes, minPosition, maxPosition, config.normalSamplingLevel, false);
 
   feature.calculateDescriptor(nodes);
-  feature.cornerness3D = sure::calculateCornerness(nodes);
+  feature.setCornerness(sure::calculateCornerness(nodes));
 }

@@ -41,11 +41,17 @@ void sure::OctreeValue::clear()
   }
   for(int i=0; i<3; ++i)
   {
-    summedSquares[i] = summedPos[i] = 0.f;
+    summedSquares[i] = 0.f;
+    summedPos[i] = 0.f;
+
     normal[i] = 0.f;
+
+    eigenVectors[i] = 0.f;
+    eigenValues[i] = 0.f;
   }
   for(int i=3; i<9; ++i)
   {
+    eigenVectors[i] = 0.f;
     summedSquares[i] = 0.f;
   }
   numberOfPoints = 0;
@@ -62,48 +68,44 @@ void sure::OctreeValue::clear()
   normalHistogram = sure::NormalHistogram();
 }
 
-const sure::OctreeValue& sure::OctreeValue::operator=(const sure::OctreeValue& rhs)
-{
-  if( this != &rhs )
-  {
-    this->normalHistogram = sure::NormalHistogram(rhs.normalHistogram);
-    this->colorR = rhs.colorR;
-    this->colorG = rhs.colorG;
-    this->colorB = rhs.colorB;
-    this->cornerness3D = rhs.cornerness3D;
-    this->entropy = rhs.entropy;
-    this->density = rhs.density;
-    this->scale = rhs.scale;
-    this->numberOfPoints = rhs.numberOfPoints;
-    this->pointCloudIndex = rhs.pointCloudIndex;
-    this->statusOfMaximum = rhs.statusOfMaximum;
-    this->statusOfNormal = rhs.statusOfNormal;
-    for(int i=0; i<3; ++i)
-    {
-      this->normal[i] = rhs.normal[i];
-      this->summedPos[i] = rhs.summedPos[i];
-      this->summedSquares[i] = rhs.summedSquares[i];
-    }
-    for(int i=3; i<9; ++i)
-    {
-      this->summedSquares[i] = rhs.summedSquares[i];
-    }
-
-    for(int i=0; i<5; ++i)
-    {
-      this->test[i] = rhs.test[i];
-    }
-  }
-  return *this;
-}
+//const sure::OctreeValue& sure::OctreeValue::operator=(const sure::OctreeValue& rhs)
+//{
+//  if( this != &rhs )
+//  {
+//    this->normalHistogram = sure::NormalHistogram(rhs.normalHistogram);
+//    this->colorR = rhs.colorR;
+//    this->colorG = rhs.colorG;
+//    this->colorB = rhs.colorB;
+//    this->cornerness3D = rhs.cornerness3D;
+//    this->entropy = rhs.entropy;
+//    this->density = rhs.density;
+//    this->scale = rhs.scale;
+//    this->numberOfPoints = rhs.numberOfPoints;
+//    this->pointCloudIndex = rhs.pointCloudIndex;
+//    this->statusOfMaximum = rhs.statusOfMaximum;
+//    this->statusOfNormal = rhs.statusOfNormal;
+//    for(int i=0; i<3; ++i)
+//    {
+//      this->normal[i] = rhs.normal[i];
+//      this->summedPos[i] = rhs.summedPos[i];
+//      this->summedSquares[i] = rhs.summedSquares[i];
+//    }
+//    for(int i=3; i<9; ++i)
+//    {
+//      this->summedSquares[i] = rhs.summedSquares[i];
+//    }
+//
+//    for(int i=0; i<5; ++i)
+//    {
+//      this->test[i] = rhs.test[i];
+//    }
+//  }
+//  return *this;
+//}
 
 sure::OctreeValue sure::OctreeValue::operator+(const sure::OctreeValue& rhs) const
 {
   sure::OctreeValue r(*this);
-  for(int i=0; i<5; ++i)
-  {
-    r.test[i] = rhs.test[i];
-  }
   if( rhs.statusOfMaximum == sure::OctreeValue::BACKGROUND )
   {
     r.statusOfMaximum = rhs.statusOfMaximum;
@@ -126,10 +128,6 @@ sure::OctreeValue sure::OctreeValue::operator+(const sure::OctreeValue& rhs) con
 
 sure::OctreeValue& sure::OctreeValue::operator+=(const sure::OctreeValue& rhs)
 {
-  for(int i=0; i<5; ++i)
-  {
-    this->test[i] = rhs.test[i];
-  }
   if( rhs.statusOfMaximum == sure::OctreeValue::BACKGROUND )
   {
     this->statusOfMaximum = rhs.statusOfMaximum;
