@@ -35,7 +35,7 @@
 
 void sure::OctreeValue::clear()
 {
-  for(int i=0; i<5; ++i)
+  for(int i=0; i<20; ++i)
   {
     test[i] = std::numeric_limits<float>::infinity();
   }

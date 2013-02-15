@@ -137,7 +137,7 @@ namespace sure {
     float normal[3];
     float eigenVectors[9];
     float eigenValues[3];
-    float test[5];
+    float test[20];
 
     sure::OctreeValue::NormalStatus statusOfNormal;
 

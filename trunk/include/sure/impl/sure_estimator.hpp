@@ -366,22 +366,10 @@ void sure::SURE_Estimator<PointT>::calculateNormals(unsigned int level, float ra
  * @return true, if the calculation is succesful
  */
 template <typename PointT>
-bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeNode* node, float radius, int count)
+bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeNode* node, float radius)
 {
-  if( count < 0 )
-  {
-    count = node->numPoints;
-  }
-
-  if( count < sure::MINIMUM_POINTS_FOR_NORMAL )
-  {
-    node->value.statusOfNormal = sure::OctreeValue::NORMAL_UNSTABLE;
-    return false;
-  }
-
   Eigen::Matrix3f summedSquares;
   Eigen::Vector3f summedPosition;
-
 
   if( radius > node->maxPosition.p[0] - node->position.p[0] )
   {
@@ -396,38 +384,50 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeNode* node, float
     maxPosition.p[1] = node->closestPosition.p[1] + radius;
     maxPosition.p[2] = node->closestPosition.p[2] + radius;
 
-    unsigned int count = 0;
-    octree->getValueAndCountInVolume(tempValue, count, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
+    unsigned int pointCount = 0;
+    octree->getValueAndCountInVolume(tempValue, pointCount, minPosition, maxPosition, config.getOctreeMinimumVolumeSize());
 
-    summedSquares(0, 0) = tempValue.summedSquares[0] * (1.f / (float) count);
-    summedSquares(0, 1) = tempValue.summedSquares[1] * (1.f / (float) count);
-    summedSquares(0, 2) = tempValue.summedSquares[2] * (1.f / (float) count);
-    summedSquares(1, 0) = tempValue.summedSquares[3] * (1.f / (float) count);
-    summedSquares(1, 1) = tempValue.summedSquares[4] * (1.f / (float) count);
-    summedSquares(1, 2) = tempValue.summedSquares[5] * (1.f / (float) count);
-    summedSquares(2, 0) = tempValue.summedSquares[6] * (1.f / (float) count);
-    summedSquares(2, 1) = tempValue.summedSquares[7] * (1.f / (float) count);
-    summedSquares(2, 2) = tempValue.summedSquares[8] * (1.f / (float) count);
+    if( (unsigned int) pointCount < sure::MINIMUM_POINTS_FOR_NORMAL )
+    {
+      node->value.statusOfNormal = sure::OctreeValue::NORMAL_UNSTABLE;
+      return false;
+    }
 
-    summedPosition(0) = tempValue.summedPos[0] * (1.f / (float) count);
-    summedPosition(1) = tempValue.summedPos[1] * (1.f / (float) count);
-    summedPosition(2) = tempValue.summedPos[2] * (1.f / (float) count);
+    summedSquares(0, 0) = tempValue.summedSquares[0] * (1.f / (float) pointCount);
+    summedSquares(0, 1) = tempValue.summedSquares[1] * (1.f / (float) pointCount);
+    summedSquares(0, 2) = tempValue.summedSquares[2] * (1.f / (float) pointCount);
+    summedSquares(1, 0) = tempValue.summedSquares[3] * (1.f / (float) pointCount);
+    summedSquares(1, 1) = tempValue.summedSquares[4] * (1.f / (float) pointCount);
+    summedSquares(1, 2) = tempValue.summedSquares[5] * (1.f / (float) pointCount);
+    summedSquares(2, 0) = tempValue.summedSquares[6] * (1.f / (float) pointCount);
+    summedSquares(2, 1) = tempValue.summedSquares[7] * (1.f / (float) pointCount);
+    summedSquares(2, 2) = tempValue.summedSquares[8] * (1.f / (float) pointCount);
+
+    summedPosition(0) = tempValue.summedPos[0] * (1.f / (float) pointCount);
+    summedPosition(1) = tempValue.summedPos[1] * (1.f / (float) pointCount);
+    summedPosition(2) = tempValue.summedPos[2] * (1.f / (float) pointCount);
   }
   else
   {
-    summedSquares(0, 0) = node->value.summedSquares[0] * (1.f / (float) count);
-    summedSquares(0, 1) = node->value.summedSquares[1] * (1.f / (float) count);
-    summedSquares(0, 2) = node->value.summedSquares[2] * (1.f / (float) count);
-    summedSquares(1, 0) = node->value.summedSquares[3] * (1.f / (float) count);
-    summedSquares(1, 1) = node->value.summedSquares[4] * (1.f / (float) count);
-    summedSquares(1, 2) = node->value.summedSquares[5] * (1.f / (float) count);
-    summedSquares(2, 0) = node->value.summedSquares[6] * (1.f / (float) count);
-    summedSquares(2, 1) = node->value.summedSquares[7] * (1.f / (float) count);
-    summedSquares(2, 2) = node->value.summedSquares[8] * (1.f / (float) count);
+    if( (unsigned int) node->numPoints < sure::MINIMUM_POINTS_FOR_NORMAL )
+    {
+      node->value.statusOfNormal = sure::OctreeValue::NORMAL_UNSTABLE;
+      return false;
+    }
 
-    summedPosition(0) = node->value.summedPos[0] * (1.f / (float) count);
-    summedPosition(1) = node->value.summedPos[1] * (1.f / (float) count);
-    summedPosition(2) = node->value.summedPos[2] * (1.f / (float) count);
+    summedSquares(0, 0) = node->value.summedSquares[0] * (1.f / (float) node->numPoints);
+    summedSquares(0, 1) = node->value.summedSquares[1] * (1.f / (float) node->numPoints);
+    summedSquares(0, 2) = node->value.summedSquares[2] * (1.f / (float) node->numPoints);
+    summedSquares(1, 0) = node->value.summedSquares[3] * (1.f / (float) node->numPoints);
+    summedSquares(1, 1) = node->value.summedSquares[4] * (1.f / (float) node->numPoints);
+    summedSquares(1, 2) = node->value.summedSquares[5] * (1.f / (float) node->numPoints);
+    summedSquares(2, 0) = node->value.summedSquares[6] * (1.f / (float) node->numPoints);
+    summedSquares(2, 1) = node->value.summedSquares[7] * (1.f / (float) node->numPoints);
+    summedSquares(2, 2) = node->value.summedSquares[8] * (1.f / (float) node->numPoints);
+
+    summedPosition(0) = node->value.summedPos[0] * (1.f / (float) node->numPoints);
+    summedPosition(1) = node->value.summedPos[1] * (1.f / (float) node->numPoints);
+    summedPosition(2) = node->value.summedPos[2] * (1.f / (float) node->numPoints);
   }
 
   summedSquares -= summedPosition * summedPosition.transpose();
@@ -457,6 +457,10 @@ bool sure::SURE_Estimator<PointT>::calculateNormal(sure::OctreeNode* node, float
     node->value.eigenVectors[7] = eigenVectors.col(2)[1];
     node->value.eigenVectors[8] = eigenVectors.col(2)[2];
     node->value.test[0] = eigenValues[0] / (eigenValues[0]+eigenValues[1]+eigenValues[2]);
+    node->value.test[1] = eigenValues[1] / (eigenValues[0]+eigenValues[1]+eigenValues[2]);
+    node->value.test[2] = eigenValues[2] / (eigenValues[0]+eigenValues[1]+eigenValues[2]);
+    node->value.test[3] = (eigenValues[1] + eigenValues[2]) / (eigenValues[0]+eigenValues[1]+eigenValues[2]);
+    node->value.test[4] = (eigenValues[0] + eigenValues[1]) / (eigenValues[0]+eigenValues[1]+eigenValues[2]);
     return true;
   }
   else

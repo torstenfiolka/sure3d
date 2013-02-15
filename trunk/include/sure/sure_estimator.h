@@ -147,7 +147,7 @@ namespace sure
 
     void calculateNormals();
     void calculateNormals(unsigned int level, float radius);
-    bool calculateNormal(sure::OctreeNode* node, float radius = 0.f, int count = -1);
+    bool calculateNormal(sure::OctreeNode* node, float radius = 0.f);
     bool calculateNormal(const Eigen::Vector3f& position, float radius, Eigen::Vector3f& normal);
 
     void orientateNormal(Eigen::Vector3f& normal, const Eigen::Vector3f& position);
@@ -166,6 +166,9 @@ namespace sure
     void extractFeature();
 
     void localizeFeatureWithMeanShift(int iterations = 3);
+
+//    float calculate(const sure::OctreePosition& position, float radius);
+//    void test();
 
     sure::Feature createFeature(OctreeNode* node);
     sure::Feature createFeature(const Eigen::Vector3f& point);
@@ -207,7 +210,7 @@ namespace sure
 
 }
 
-
 #include "sure/impl/sure_estimator.hpp"
+//#include "sure/impl/current.hpp"
 
 #endif /* SURE_ESTIMATOR_H_ */
