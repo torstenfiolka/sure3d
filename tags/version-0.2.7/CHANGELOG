@@ -1,0 +1,49 @@
+0.2.7: Feb 15th, 2013
+
+- Minor changes to the normal calculation in sure::SURE_Estimator
+
+0.2.6: Feb 14th, 2013
+
+- Refactored normal calculation in sure::SURE_Estimator to dispose of some wrapper methods
+
+0.2.5: Feb 14th, 2013
+
+- Fixed a bug in serialization of sure::ColorSurflet introduced with 0.2.4
+
+0.2.4: Feb 14th, 2013
+
+- Refactored sure::Surflet, sure::ColorSurflet and sure::Feature and made all member variables protected
+- Minor changes to sure::OctreeValue 
+
+0.2.3: Feb 8th, 2013
+
+- Fixed a bug in the default constructor of sure::Configuration, which caused an invalid configuration after creating
+
+0.2.2: Feb 7th, 2013
+
+- Implemented serialization for sure::Configuration
+
+0.2.1: Feb 6th, 2013
+
+- Corrected the ambiguous call of sure::Feature::distanceTo
+
+0.2: Jan 18th, 2013
+
+- Implemented sure::Feature serialization with Boost::serialization 
+- Removed dynamically allocated Histograms in OctreeValue class
+- Changed octree parameters from static variables to configuration class variables
+- Minor changes to depth jump detection in the RangeImage class
+- Normal calculation and Entropy calculation in SURE_Estimator class refactored
+- Fixed a bug in the octree which caused false position information in nodes on lowest level
+
+0.1.2: Oct 11th, 2012
+
+- Another Fix for the range image not correctly calculating the view direction
+
+0.1.1: Oct 8th, 2012
+
+- Fixed the range image not correctly calculating the view direction
+- Completed the configuration interface so far and renamed some internal variables to make them more intelligible
+
+0.1, Oct 5th, 2012: Initial Release 
+
