@@ -1,0 +1,25 @@
+SURE Octree Anforderungen:
+
+- Threadsicherheit: Es sollen beliebig viele Threads auf Knoten lesend zugreifen können, aber nur einer schreibend.
+	Schreibzugriffe sind in der Regel nicht gleichzeitig mit Lesezugriffen. 
+	
+- Die Payload soll nur bei Bedarf konstruiert werden
+
+- Der Octree organisiert die ebenenbasierte Liste aller Knoten selbst
+
+- Der Octree darf keinen Direktzugriff auf Knoten ermöglichen
+
+- Die Adressierung von Knoten und Bereichen erfolgt möglichst ganzzahlig
+
+- Die Adresse eines Knotens sollte möglichst frei von einem Mutex sein
+
+
+
+
+Überlegungen:
+
+- Octree bottom-up aufbauen
+
+- Knoten enthält inkrementelle Datenklasse (template, +) und Zeiger auf beliebige Datenklasse
+
+- Allocator threadsafety? (atomic)
