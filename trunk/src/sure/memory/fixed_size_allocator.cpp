@@ -31,4 +31,4 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <sure/range_image.h>
+#include<sure/memory/fixed_size_allocator.h>

@@ -3,8 +3,6 @@
 // Copyright (c) 2012-2013, Fraunhofer FKIE/US
 // All rights reserved.
 // Author: Torsten Fiolka
-// based on the CloudViewer tutorial from
-// http://www.pointclouds.org/documentation/tutorials/cloud_viewer.php
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -33,16 +31,34 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <pcl/visualization/cloud_viewer.h>
 #include <iostream>
-#include <pcl/io/io.h>
+
+#include <sure/sure.h>
+
+#include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/transforms.h>
+#include <pcl/visualization/cloud_viewer.h>
 
-#include <sure/sure_estimator.h>
+#include <boost/date_time.hpp>
+
+#include <stdlib.h>
 
 pcl::PointCloud<pcl::InterestPoint>::Ptr features;
-sure::Configuration config;
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr getRandomCloud()
+{
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+  for(unsigned int i=0; i<1000000; ++i)
+  {
+    pcl::PointXYZRGB p;
+    p.x = ((float) rand() / (float) RAND_MAX)*40.f - 20.f;
+    p.y = ((float) rand() / (float) RAND_MAX)*40.f - 20.f;
+    p.z = ((float) rand() / (float) RAND_MAX)*40.f - 20.f;
+    cloud->points.push_back(p);
+  }
+  return cloud;
+}
 
 //! converts rgb-ints to the pcl-float for storing rgb-values
 inline float createPCLRGBfromInt(int r, int g, int b)
@@ -70,7 +86,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr generatePointCloud()
 
   float start = -0.5f;
   float stop = 0.5f;
-  float stepSize = 0.005f;
+  float stepSize = 0.0025f;
 
   for (float x=start; x<=stop; x+=stepSize) {
     for (float y=start; y<=stop; y+=stepSize) {
@@ -132,65 +148,73 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr generatePointCloud()
   Eigen::Affine3f transform(Eigen::Matrix3f(Eigen::AngleAxisf(M_PI_4, Eigen::Vector3f::UnitZ()) * Eigen::AngleAxisf(M_PI_4, Eigen::Vector3f::UnitY()) * Eigen::AngleAxisf(M_PI_4, Eigen::Vector3f::UnitZ()) ));
   pcl::transformPointCloud(*cloud, *transformedCloud, transform);
 
+  transformedCloud->sensor_orientation_ = Eigen::Quaternionf(transform.rotation());
+  transformedCloud->sensor_origin_ = Eigen::Vector4f(transform.translation()[0], transform.translation()[1], transform.translation()[2], 0.f);
+
   return transformedCloud;
 }
 
-void
-viewerOneOff (pcl::visualization::PCLVisualizer& viewer)
+void viewerOneOff (pcl::visualization::PCLVisualizer& viewer)
 {
   viewer.setBackgroundColor (1.0, 1.0, 1.0);
   if( features )
   {
-    int id=0;
-    for(pcl::PointCloud<pcl::InterestPoint>::const_iterator it=features->points.begin(); it != features->points.end(); ++it)
+    for(unsigned i=0; i<features->size(); ++i)
     {
       std::stringstream s;
-      s << "feature" << id;
+      s << "feature" << i;
       pcl::PointXYZ p;
-      p.x = (*it).x;
-      p.y = (*it).y;
-      p.z = (*it).z;
-      viewer.addSphere(p, config.getSize(), s.str(), 0);
-      id++;
+      p.x = features->at(i).x;
+      p.y = features->at(i).y;
+      p.z = features->at(i).z;
+      viewer.addSphere(p, features->at(i).strength, s.str(), 0);
     }
   }
 }
 
-int
-main ()
+int main ()
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = generatePointCloud();
 
     pcl::visualization::CloudViewer viewer("SURE 3D Features Visualization");
 
     // SURE 3D Feature base class
-    sure::SURE_Estimator<pcl::PointXYZRGB> sure;
+    sure::SUREFeatureExtractor sure;
 
     // set input cloud
     sure.setInputCloud(cloud);
 
+    sure::Configuration& config = sure.config;
+
     // Adjust the size of the features (in meter)
-    config.setSize(0.12f);
+    config.clearScales();
+    config.addScale(0.12f);
+//    config.addScale(0.24f);
+//    config.addScale(0.36f);
 
     // Adjust the sampling rate
-    config.setSamplingRate(0.04f);
+    config.Samplingrate = 0.04;
 
     // Adjust the normal sampling rate
-    config.setNormalSamplingRate(0.02f);
+    config.NormalSamplingrate = 0.02;
 
     // Adjust the influence radius for calculating normals
-    config.setNormalsScale(0.04f);
+    config.NormalRegionSize = 0.04;
+
+    // Adjust the minimum entropy for a feature
+    config.MinimumEntropyThreshold = 0.6;
 
     // Adjust the minimum Cornerness to reduce number of features on edges
-    config.setMinimumCornerness(0.25f);
+    config.MinimumCornernessThreshold = 0.3;
 
-//    config.setEntropyCalculationMode(sure::CROSSPRODUCTS_ALL_NORMALS_PAIRWISE);
+    config.AdditionalPointsOnDepthBorders = false;
+    config.IgnoreBackgroundDetections = false;
+    config.IgnoreNormalsOnBackgroundDepthBorders = false;
 
-    // set altered configuration
-    sure.setConfig(config);
+    sure.verbose = true;
 
     // calculate features
-    sure.calculateFeatures();
+    sure.calculateSURE();
 
     // get a copy of the features for visualization
     features = sure.getInterestPoints();
