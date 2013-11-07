@@ -31,57 +31,6 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "sure/color_surflet.h"
+#include <sure/payload/payload.h>
 
-void sure::convertPCLRGBtoFloatRGB(float rgb, float& r, float& g, float& b)
-{
-  int color = *reinterpret_cast<const int*>(&rgb);
-  r = float((0xff0000 & color) >> 16) / 255.f;
-  g = float((0x00ff00 & color) >> 8) / 255.f;
-  b = float( 0x0000ff & color) / 255.f;
-}
 
-void sure::convertRGBtoHSL(const float r, const float g, const float b, double& h, double& s, double& l)
-{
-  float max = std::max(std::max(r,g), b);
-  float min = std::min(std::min(r,g), b);
-  l = ((double) (max+min)) * 0.5;
-
-  if( fabs(max-min) < 0.0001f )
-  {
-    s = h = 0.0;
-  }
-  else
-  {
-    if( l < 0.5 )
-    {
-      s = (double) ((max-min) / (max+min));
-    }
-    else
-    {
-      s = (double) ((max-min) / (2.f-max-min));
-    }
-
-    if( r == max)
-    {
-      h = (double) (1.f + ((g-b) / (max-min)));
-    }
-    else if( g == max )
-    {
-      h = (double) (3.f + ((b-r) / (max-min)));
-    }
-    else if( b == max )
-    {
-      h = (double) (5.f + ((r-g) / (max-min)));
-    }
-  }
-}
-
-//std::ostream& sure::operator<<(std::ostream& stream, const sure::ColorSurflet& rhs)
-//{
-//  stream << (sure::Surflet) rhs;
-//  stream << std::fixed << std::setprecision(3) << "[ColorSurflet] RGB: " << rhs.r << " / " << rhs.g << " / " << rhs.b << std::endl;
-//  return stream;
-//}
-
-BOOST_CLASS_VERSION(sure::ColorSurflet, 0)

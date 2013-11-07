@@ -31,29 +31,6 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "sure/surflet.h"
+#include <sure/octree/octree.h>
 
-//! calculates surflet pair relations for two given suflets
-void sure::calculateSurfletPairRelations(const sure::Surflet& reference, const sure::Surflet& neighbour, double& alpha, double& phi, double& theta)
-{
-  Eigen::Vector3d u, v, w, p2p1;
-  p2p1 = Eigen::Vector3d(neighbour.position()[0] - reference.position()[0], neighbour.position()[1] - reference.position()[1], neighbour.position()[2] - reference.position()[2]);
-  u = Eigen::Vector3d(reference.normal()[0], reference.normal()[1], reference.normal()[2]);
-  u.normalize();
-  v = u.cross(p2p1);
-  v.normalize();
-  w = v.cross(u);
-  w.normalize();
-  alpha = (double) v.dot(Eigen::Vector3d(neighbour.normal()[0], neighbour.normal()[1], neighbour.normal()[2]));
-  phi = (double) (u.dot(p2p1))/p2p1.norm();
-  theta = (double) atan2(w.dot(Eigen::Vector3d(neighbour.normal()[0], neighbour.normal()[1], neighbour.normal()[2])), u.dot(Eigen::Vector3d(neighbour.normal()[0], neighbour.normal()[1], neighbour.normal()[2])));
-}
 
-//std::ostream& sure::operator<<(std::ostream& stream, const sure::Surflet& rhs)
-//{
-//  stream << std::fixed << std::setprecision(3) << "[Surflet] Position: " << rhs.point[0] << " / " << rhs.point[1] << " / " << rhs.point[2] << std::endl;
-//  stream << std::fixed << std::setprecision(3) << "[Surflet] Normal: " << rhs.normal[0] << " / " << rhs.normal[1] << " / " << rhs.normal[2] << std::endl;
-//  return stream;
-//}
-
-BOOST_CLASS_VERSION(sure::Surflet, 0)

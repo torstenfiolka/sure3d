@@ -31,13 +31,6 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <sure/histogram_base.h>
+#include <sure/octree/octree_level_map.h>
 
-void sure::HistogramBase::print() const
-{
-  std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Histogram Size: " << histogramSize << " Bin Size: " << binSize << std::endl;
-  std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Min: " << minimum << " Max: " << maximum << " Range: " << range << std::endl;
-  std::cout << std::fixed << std::setprecision(3) << "[HistogramBase] " << name << " Histogram Weight: " << histogramWeight << " Number of Points: " << numberOfPoints << " Normalized: " << isNormalized() << std::endl;
-}
 
-BOOST_CLASS_VERSION(sure::HistogramBase, 0)

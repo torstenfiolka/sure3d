@@ -31,4 +31,25 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "sure/map2d.h"
+#include <sure/normal/normal.h>
+
+std::ostream& sure::normal::operator<<(std::ostream& stream, const Normal& normal)
+{
+  switch( normal.getStatus() )
+  {
+    case Normal::NORMAL_NOT_CALCULATED:
+      stream << "Normal not calculated\n";
+      break;
+    case Normal::NORMAL_UNSTABLE:
+      stream << "Normal unstable\n";
+      break;
+    default:
+      stream.setf(std::ios_base::fixed);
+      stream << std::setprecision(2);
+      stream << "Normal " << normal[0] << "/" << normal[1] << "/" << normal[2] << "\n";
+      stream.unsetf(std::ios_base::fixed);
+      break;
+  }
+  return stream;
+}
+

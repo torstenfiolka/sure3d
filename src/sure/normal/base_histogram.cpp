@@ -31,4 +31,32 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "sure/histogram_emd.h"
+#include <include/sure/normal/base_histogram.h>
+
+std::vector<sure::NormalType, sure::NormalTypeAllocator> sure::normal::initVectors(unsigned numberOfPolarBins)
+{
+  std::vector<NormalType, NormalTypeAllocator> vecs;
+  const float polarBinSize = M_PI / float(numberOfPolarBins);
+  float azimuthBinSize;
+  float polarCenter, azimuthCenter;
+  int numberOfAzimuthBins;
+
+  for(int polarBin=0; polarBin<numberOfPolarBins; ++polarBin)
+  {
+    polarCenter = polarBinSize * float(polarBin);
+    numberOfAzimuthBins = floor(fabs(float(numberOfPolarBins*2) * sin(polarCenter))) + 1;
+    azimuthBinSize = (2.f * M_PI) / float(numberOfAzimuthBins);
+    for(int azimuthBin=0; azimuthBin<numberOfAzimuthBins; ++azimuthBin)
+    {
+      NormalType vec;
+      azimuthCenter = azimuthBinSize * float(azimuthBin);
+      vec[0] = sin(polarCenter) * cos(azimuthCenter);
+      vec[1] = sin(polarCenter) * sin(azimuthCenter);
+      vec[2] = cos(polarCenter);
+      vecs.push_back(vec);
+    }
+  }
+  vecs.push_back(NormalType(0.f, 0.f, -1.f));
+  return vecs;
+}
+

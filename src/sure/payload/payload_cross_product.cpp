@@ -31,4 +31,12 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "sure/sure_estimator.h"
+#include <sure/payload/payload_cross_product.h>
+
+std::ostream& sure::payload::operator<<(std::ostream& stream, const CrossProductPayload& rhs)
+{
+  stream << rhs.normal_;
+  stream << rhs.histogram_;
+  return stream;
+}
+
