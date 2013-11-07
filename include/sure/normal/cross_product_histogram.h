@@ -31,70 +31,47 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef MAP2D_H_
-#define MAP2D_H_
+#ifndef CROSS_PRODUCT_HISTOGRAM_H_
+#define CROSS_PRODUCT_HISTOGRAM_H_
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
 #include <vector>
+#include <cmath>
+#include <iostream>
+#include <Eigen/Dense>
+#include <pcl/point_types.h>
 
-namespace sure {
+#include <sure/normal/base_histogram.h>
 
-template<typename Type>
-class Map2d
+namespace sure
 {
-public:
 
-  Map2d();
-  Map2d(Type defaultValue);
-  Map2d(unsigned int width, unsigned int height);
-  Map2d(unsigned int width, unsigned int height, Type defaultValue);
-  Map2d(const Map2d<Type>& obj);
-  ~Map2d();
+  namespace normal
+  {
 
-  void reset();
-  void clear();
-  void resize(unsigned int width, unsigned int height);
+    //! stores the histogram for a normal
+    class CrossProductHistogram : public BaseHistogram<CROSS_PRODUCT_HISTOGRAM_SIZE>
+    {
+      public:
 
-  Map2d<Type>& operator=(const Map2d<Type>& rValue);
+        CrossProductHistogram() : BaseHistogram<CROSS_PRODUCT_HISTOGRAM_SIZE>()
+        {
+        }
 
-  unsigned int getX(unsigned int i) const { return (i % width); }
-  unsigned int getY(unsigned int i) const { return (i / width); }
+        virtual ~CrossProductHistogram() {}
 
-  Type at(unsigned int index) const;
-  Type& at(unsigned int index);
-  Type at(unsigned int x, unsigned int y) const { return at(y*width+x); }
-  Type& at(unsigned int x, unsigned int y) { return at(y*width+x); }
+        void insertCrossProduct(const NormalType& referenceNormal, const NormalType& secondNormal);
 
-  bool exists(unsigned int index) const;
-  bool& exists(unsigned int index);
-  bool exists(unsigned int x, unsigned int y) const { return exists(y*width+x); }
-  bool& exists(unsigned int x, unsigned int y) { return exists(y*width+x); }
+        HistoType calculateEntropy() const { return calculateRawEntropy() / MAX_ENTROPY; }
 
-  void set(unsigned int index, const Type& t);
-  void set(unsigned int x, unsigned int y, const Type& t) { set(y*width+x, t); }
+      protected:
 
-  void remove(unsigned int index);
-  void remove(unsigned int x, unsigned int y) { remove(y*width+x); }
+        static const int CODIRECTION_CROSSPRODUCT_BIN = CROSS_PRODUCT_HISTOGRAM_SIZE-1;
+        static const HistoType MAX_ENTROPY;
 
-  void removeRow(unsigned int row);
-  void removeColumn(unsigned int column);
+    };
 
-  std::vector<Type> getVector(bool onlyValid = true) const;
-  sure::Map2d<Type> subsample(int step) const;
+  } // namespace
 
-  Type* map;
-  bool* valid;
+} // namespace
 
-  Type defaultValue, invalidValue;
-  bool invalidStatus;
-
-  unsigned int width, height, size;
-
-};
-
-}
-
-#include "sure/impl/map2d.hpp"
-
-#endif /* MAP2D_H_ */
+#endif /* CROSS_PRODUCT_HISTOGRAM_H_ */
