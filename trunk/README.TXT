@@ -2,7 +2,7 @@
 SURE 3D Features
 ----------------
 
-Version: 0.2.7, February 2013
+Version: 0.3, November 2013
 
 This directory contains the source code for the SURE 3D Features.
 Please note that the code API is _NOT_ stable and might change in future versions.  
@@ -10,7 +10,7 @@ Please note that the code API is _NOT_ stable and might change in future version
 If you use the code, please cite:
 	SURE: Surface Entropy for Distinctive 3D Features
 	Torsten Fiolka, Jörg Stückler, Dominik A. Klein, Dirk Schulz, Sven Behnke
-	Spatial Cognition 2012
+	Spatial Cognition 2012	
 
 bibtex:
 @incollection {
@@ -23,8 +23,6 @@ bibtex:
    year = {2012}
 }
 
-Further, parts of the octreelib (http://ros.org/wiki/octreelib) from Jörg Stückler are included.
-
 ------------
 INSTALLATION
 ------------
@@ -33,12 +31,11 @@ The project was developed under Ubuntu Linux 12.04 and not tested in other opera
 
 Dependencies:
 	-- CMAKE 2.6 or later
-	-- PCL 1.5.1 (www.pointclouds.org)
+	-- PCL 1.5.1 (www.pointclouds.org) or later
 	-- FastEMD from Ofir Pele and Michael Werman (NOT INCLUDED!)
 	   Tested with versions 2.1 to 3.0 from http://www.seas.upenn.edu/~ofirpele/FastEMD/code/
 	   You need to place the FastEMD directory somewhere the compiler can find it, default is
 	   include/FastEMD. You can change the include-path in include/sure/histogram_emd.h, if necessary.
-	-- an early version of the octreelib from Jörg Stückler (included)
 	
 To compile the code, switch to the directory and type:
 cmake .
@@ -51,20 +48,13 @@ can find the library.
 USAGE
 -----
 
-To uses SURE 3D Features you need to include sure/sure_estimator.h in your own code.
-Create an object of SURE_Estimator<pcl::PointType> with pcl::PointType corresponding
-to the type of point cloud you use, e.g. pcl::PointXYZRGB.
+To uses SURE 3D Features you need to include sure/sure.h in your own code.
+Create an object of SUREFeatureExtractor, insert a pointcloud with pcl::PointXYZRGB as point type and start the calculation via calculateSURE().
 
-To change parameters, create an object of sure::Configuration, alter the parameters and call
-SURE_Estimator::setConfig(sure::Configuration& altered_configuration) to use them.
+To change parameters, edit the SURE::Configuration object named config in SUREFeatureExtractor.
 
-The use setInpudCloud(pcl::PointCloud<..>&) to insert the point cloud and call 
-SURE_Estimator::calculateFeatures() to start the feature detection and extraction.
-
-To access the calculated features, use getFeatures() or getInterestPoints().
-
-A little example of the usage combined with some visualization is include in src/test_cure.cpp
-After compiling, you should be able to start the program bin/test_sure.    
+A little example of the usage combined with some visualization is included in src/example.cpp
+After compiling, you should be able to start the program bin/sure-example.    
 
 -------
 CONTACT
