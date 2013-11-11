@@ -62,9 +62,9 @@ void sure::descriptor::ShapeDescriptor::normalize()
   theta_.normalize();
 }
 
-HistoType sure::descriptor::ShapeDescriptor::distanceTo(const ShapeDescriptor& rhs) const
+sure::Scalar sure::descriptor::ShapeDescriptor::distanceTo(const ShapeDescriptor& rhs) const
 {
-  HistoType distance(0.0);
+  Scalar distance(0.0);
   distance += alpha_.L2Distance(rhs.alpha_);
   distance += phi_.L2Distance(rhs.phi_);
   distance += theta_.L2Distance(rhs.theta_);

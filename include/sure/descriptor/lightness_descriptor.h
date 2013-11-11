@@ -55,7 +55,7 @@ namespace sure
         HistoType getLightness() const { return referenceLightness_; }
 
         void insertValue(HistoType lightness) { LightnessHistogram::insertSmooth(lightness - referenceLightness_, 1.0, false); }
-        HistoType distanceTo(const LightnessDescriptor& rhs) const { return LightnessHistogram::L2Distance((LightnessHistogram) rhs); }
+        Scalar distanceTo(const LightnessDescriptor& rhs) const { return LightnessHistogram::L2Distance((LightnessHistogram) rhs); }
 
       protected:
 

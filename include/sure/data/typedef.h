@@ -130,7 +130,7 @@ namespace sure
   namespace descriptor
   {
     //! Cap for the Earth Mover's distance
-    const double MAX_EARTH_MOVERS_DISTANCE = 2.0;
+    const Scalar MAX_EARTH_MOVERS_DISTANCE = 2.0;
 
     //! Color descriptor constants
     const int COLOR_DESCRIPTOR_SIZE = 24;

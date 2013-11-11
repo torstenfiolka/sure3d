@@ -111,7 +111,7 @@ namespace sure
         }
 
         void insertValues(HistoType alpha, HistoType phi, HistoType theta);
-        HistoType distanceTo(const ShapeDescriptor& rhs) const;
+        Scalar distanceTo(const ShapeDescriptor& rhs) const;
 
       protected:
 
@@ -126,7 +126,9 @@ namespace sure
         template<class Archive>
         void serialize(Archive &ar, const unsigned int version)
         {
-            ar & (ShapeHistogram) *this;
+            ar & alpha_;
+            ar & phi_;
+            ar & theta_;
         }
 
         friend std::ostream& operator<<(std::ostream& stream, const ShapeDescriptor& rhs);

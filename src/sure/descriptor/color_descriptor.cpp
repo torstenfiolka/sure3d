@@ -107,16 +107,16 @@ void sure::descriptor::ColorDescriptor::insertValue(Scalar hue, Scalar saturatio
   ColorHistogram::insertSmooth(hue, saturation, true);
 }
 
-HistoType sure::descriptor::ColorDescriptor::distanceTo(const ColorDescriptor& rhs) const
+sure::Scalar sure::descriptor::ColorDescriptor::distanceTo(const ColorDescriptor& rhs) const
 {
-  HistoType distance = 0.0;
+  Scalar distance = 0.0;
   std::vector<double> lhsVec, rhsVec;
   ColorHistogram::fillVector(lhsVec);
   rhs.fillVector(rhsVec);
   lhsVec.push_back(saturationBalance_);
   rhsVec.push_back(rhs.saturationBalance_);
   distance += emd_hat<double>()(rhsVec, lhsVec, DISTANCE_MATRIX);
-  return (distance * (1.0 / (HistoType) MAX_EARTH_MOVERS_DISTANCE));
+  return (distance * (1.0 / MAX_EARTH_MOVERS_DISTANCE));
 }
 
 std::ostream& sure::descriptor::operator<<(std::ostream& stream, const ColorDescriptor& rhs)

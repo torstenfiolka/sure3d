@@ -38,7 +38,7 @@ void sure::feature::Feature::resetDescriptor(unsigned distanceClasses)
 {
   descriptors_.clear();
   descriptors_.resize(distanceClasses);
-  distanceClassSize_ = (radius_ * 3.0) / (Scalar) descriptors_.size();
+  distanceClassSize_ = radius_ / (Scalar) descriptors_.size();
 }
 
 void sure::feature::Feature::normalizeDescriptor()
@@ -141,13 +141,15 @@ int sure::feature::Feature::createLightnessdescriptor(const NodeVector& nodes, S
 
 unsigned sure::feature::Feature::getDistanceClass(const Vector3& center, const Vector3& pos) const
 {
-  unsigned dClass = 0;
+  int dClass = 0;
   if( this->descriptors_.size() > 1 )
   {
-    Scalar distance = (center - pos).cwiseAbs().sum();
-    dClass = floor(distance / distanceClassSize_);
+    Vector3 distance = (center - pos);
+    dClass = std::max(dClass, (int) floor(distance[0] / distanceClassSize_));
+    dClass = std::max(dClass, (int) floor(distance[1] / distanceClassSize_));
+    dClass = std::max(dClass, (int) floor(distance[2] / distanceClassSize_));
   }
-  return std::min(dClass, (unsigned) descriptors_.size()-1);
+  return (unsigned) std::min(dClass, (int) descriptors_.size()-1);
 }
 
 std::ostream& sure::feature::operator<<(std::ostream& stream, const Feature& rhs)

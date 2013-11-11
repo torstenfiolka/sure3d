@@ -54,8 +54,6 @@ const sure::Scalar sure::getNormalHistogramBinSize(unsigned numberOfPolarBins)
   Scalar avgBinSize = 0.0;
   int histogramSize = 0;
 
-  std::cout << "Polar bin size: " << polarBinSize << "\n";
-
   for(int polarBin=1; polarBin<numberOfPolarBins; ++polarBin)
   {
     Scalar polarCenter = polarBinSize * float(polarBin);
@@ -63,9 +61,7 @@ const sure::Scalar sure::getNormalHistogramBinSize(unsigned numberOfPolarBins)
     Scalar azimuthBinSize = (2.f * M_PI * sin(polarCenter)) / float(numberOfAzimuthBins);
     histogramSize += numberOfAzimuthBins;
     avgBinSize += azimuthBinSize * (Scalar) numberOfAzimuthBins;
-    std::cout << "Polar bin " << polarBin << " azimuth bin size: " << azimuthBinSize << "\n";
   }
-  std::cout << "Average azimuth bin size: " << (avgBinSize / (Scalar) histogramSize) << "\n";
   return (avgBinSize / (Scalar) histogramSize);
 }
 
