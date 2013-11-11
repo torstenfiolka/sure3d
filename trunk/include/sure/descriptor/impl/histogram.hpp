@@ -115,29 +115,29 @@ void sure::descriptor::Histogram<SizeT>::insertPrecise(HistoType value, HistoTyp
 
 
 template<int SizeT>
-HistoType sure::descriptor::Histogram<SizeT>::EMDistance(const sure::descriptor::Histogram<SizeT>& rhs, const std::vector<std::vector<double> >& distanceMatrix) const
+sure::Scalar sure::descriptor::Histogram<SizeT>::EMDistance(const sure::descriptor::Histogram<SizeT>& rhs, const std::vector<std::vector<double> >& distanceMatrix) const
 {
-  HistoType distance = 0.0;
+  Scalar distance = 0.0;
   std::vector<double> lhsVec, rhsVec;
   this->fillVector(lhsVec);
   rhs.fillVector(rhsVec);
   distance += emd_hat<double>()(rhsVec, lhsVec, distanceMatrix);
-  return (distance / (HistoType) MAX_EARTH_MOVERS_DISTANCE);
+  return (distance / MAX_EARTH_MOVERS_DISTANCE);
 }
 
 template<int SizeT>
-HistoType sure::descriptor::Histogram<SizeT>::L2Distance(const Histogram<SizeT>& rhs) const
+sure::Scalar sure::descriptor::Histogram<SizeT>::L2Distance(const Histogram<SizeT>& rhs) const
 {
   if( this->weight_ > 0.0 || rhs.weight_ > 0.0 )
   {
-    HistoType distance(0.0);
+    Scalar distance(0.0);
     for(int i=0; i<SizeT; ++i)
     {
       distance += (rhs[i] - this->array_[i]) * (rhs[i] - this->array_[i]);
     }
     return sqrt(distance) / (this->weight_+rhs.weight_);
   }
-  return INFINITY;
+  return std::numeric_limits<Scalar>::infinity();
 }
 
 template<int SizeT>

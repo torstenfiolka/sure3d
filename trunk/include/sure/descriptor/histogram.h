@@ -174,8 +174,8 @@ namespace sure
 
         void fillHistogramRandom(int seed = 0);
 
-        HistoType EMDistance(const Histogram& rhs, const std::vector<std::vector<double> >& distanceMatrix) const;
-        HistoType L2Distance(const Histogram& rhs) const;
+        Scalar EMDistance(const Histogram& rhs, const std::vector<std::vector<double> >& distanceMatrix) const;
+        Scalar L2Distance(const Histogram& rhs) const;
 
         void fillVector(std::vector<double>& vec) const;
 

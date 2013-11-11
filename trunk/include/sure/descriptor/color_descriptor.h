@@ -61,7 +61,7 @@ namespace sure
         virtual void normalize();
 
         void insertValue(Scalar hue, Scalar saturation);
-        HistoType distanceTo(const ColorDescriptor& rhs) const;
+        Scalar distanceTo(const ColorDescriptor& rhs) const;
 
       protected:
 
