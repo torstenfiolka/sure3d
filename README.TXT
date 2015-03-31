@@ -2,7 +2,7 @@
 SURE 3D Features
 ----------------
 
-Version: 0.3, November 2013
+Version: 0.3.1, March 2015
 
 This directory contains the source code for the SURE 3D Features.
 Please note that the code API is _NOT_ stable and might change in future versions.  
@@ -63,8 +63,9 @@ CONTACT
 If you have questions, comments or found bugs feel free to contact me under
 torstenfiolka@googlemail.com
 
-You can also use the bug tracker on the repository site:
-http://code.google.com/p/sure-3d-features/
+You may also use the bug tracker on the repository site:
+https://github.com/torstenfiolka/sure3d
+
   
 
 
